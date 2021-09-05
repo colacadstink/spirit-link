@@ -1,0 +1,5779 @@
+type Query {
+  """
+  Retrieve the current server time in UTC.
+  """
+  now: DateTime
+
+  """
+  Fetch the currently logged-in user.
+  """
+  me: User!
+
+  """
+  Get one user by personaId or by email address. Will return an error if neither
+  `personaId` nor `emailAddress` is provided to search by. If both are provided,
+  `emailAddress` is ignored.
+  """
+  user(personaId: ID, emailAddress: String): User
+
+  """
+  Fetch a list of all WPN_ADMINs. **Currently only the `personaId` field has real data.**
+  """
+  admins: [User!]!
+
+  """
+  Get an event by ID.
+  """
+  event(id: ID!): Event
+
+  """
+  Get one page of events for an organization, subject to filtering. Without a filter, returns
+  the earliest 30 events.
+  """
+  eventPage(organizationId: ID!, filter: EventFilter): EventPage!
+
+  """
+  Get events for an organization which are currently in progress.
+  """
+  eventsInProgress(organizationId: ID!): [Event!]!
+
+  """
+  Get an event by ID with the recurrence fields present.
+  """
+  recurrenceEvent(organizationId: ID!, eventId: ID!): RecurrenceEvent
+
+  """
+  Retrieve a list of all available event formats in the selected locale's language.
+  """
+  eventFormats(locale: String): [EventFormat!]!
+
+  """
+  Retrieve a list of all available card sets in the selected locale's language.
+  """
+  cardSets(locale: String): [CardSet!]!
+
+  """
+  Retrieve a list of all available penalties in the selected locale's language.
+  """
+  penalties(locale: String): [Penalty!]!
+
+  """
+  Retrieve a list of all available infractions in the selected locale's language.
+  """
+  infractions(locale: String): [Infraction!]!
+
+  """
+  Retrieve a list of all available infraction categories in the selected locale's language.
+  """
+  infractionCategories(locale: String): [InfractionCategory!]!
+
+  """
+
+  """
+  eventTemplates: [EventTemplate!]!
+
+  """
+  Get an incident by ID.
+  """
+  incident(eventId: ID, id: ID!): Incident
+
+  """
+  Get an organization by ID.
+  """
+  organization(id: ID!): Organization
+
+  """
+  Search for organizations.
+  """
+  organizations(partialName: String): [Organization!]
+
+  """
+  Retrieve a Venue by ID.
+  """
+  venue(id: ID!): Venue
+
+  """
+  Fetches a list of all TWILIO ADMINS user details
+  """
+  twilioAdmins: [User!]!
+
+  """
+  query to fetch a timer by ID.
+  """
+  timer(id: ID!): Timer!
+
+  """
+  Search against the database of MagicCards
+  """
+  magicCards(
+    filter: MagicCardFilterInput!
+    sort: MagicCardSortInput
+    limit: Int = 10
+    offset: Int = 0
+  ): MagicCardSearchResult
+
+  """
+  Search against the database of MagicCardPrintings
+  """
+  magicCardPrintings(
+    filter: MagicCardPrintingFilterInput!
+    sort: MagicCardSortInput
+    limit: Int
+    offset: Int
+  ): MagicCardPrintingSearchResult
+
+  """
+  query to fetch a card by id.
+  """
+  magicCard(id: String!): MagicCard
+
+  """
+  query to fetch a card by name , setAbbreviation, language
+  """
+  autoCard(
+    name: String!
+    setAbbreviation: String
+    language: PrintedLanguage
+  ): MagicCard
+
+  """
+  query to fetch a random MagicCard.
+  """
+  randomCard: MagicCard
+
+  """
+  Query to fetch decks by id.
+  """
+  deck(id: ID!): Deck!
+
+  """
+  Retrieve a list of all decks owned by the current user.
+  """
+  ownedDecks(page: Int, size: Int): OwnedDeckConnection!
+}
+
+"""
+
+"""
+scalar DateTime
+
+"""
+A user of WER.next. May be a player, judge, organizer, or someone else.
+"""
+type User {
+  """
+  The personaId of the user.
+  """
+  personaId: ID!
+
+  """
+  The user's display name as returned from Platform.
+  """
+  displayName: String
+
+  """
+  The user's email address as returned from Platform.
+  """
+  emailAddress: String
+
+  """
+  The user's first name.
+  """
+  firstName: String
+
+  """
+  The user's last name.
+  """
+  lastName: String
+
+  """
+  Whether this user has verified their email address. Unlike the other user fields, this one is sourced directly from their JWT.
+  """
+  isEmailVerified: Boolean
+
+  """
+  The roles that the user has been granted.
+  """
+  roles: [Role!]!
+}
+
+"""
+An role grants a particular user permissions to take actions in the scope of an
+organization. The exception is the WPN_ADMIN role, which is global in scope and
+not tied to any particular organization. The `organization` field will be `null`
+in this case.
+"""
+type Role {
+  """
+
+  """
+  roleName: RoleName!
+
+  """
+
+  """
+  user: User!
+
+  """
+
+  """
+  organization: Organization
+}
+
+"""
+
+"""
+enum RoleName {
+  """
+
+  """
+  WPN_ADMIN
+
+  """
+
+  """
+  STORE_OWNER
+
+  """
+
+  """
+  STORE_ADMIN
+
+  """
+
+  """
+  SCOREKEEPER
+
+  """
+
+  """
+  TWILIO_ADMIN
+}
+
+"""
+An organization that hosts events, such as a local game store.
+"""
+type Organization {
+  """
+
+  """
+  id: ID!
+
+  """
+  The name of the organization.
+  """
+  name: String!
+
+  """
+  The latitude of the organization's primary location.
+  """
+  latitude: Float
+
+  """
+  The longitude of the organization's primary location.
+  """
+  longitude: Float
+
+  """
+  The organization's primary phone number.
+  """
+  phoneNumber: String
+
+  """
+  The organization's primary email address.
+  """
+  emailAddress: String
+
+  """
+  The organization's primary web site URL.
+  """
+  website: String
+
+  """
+  The primary postal address of the organization.
+  """
+  postalAddress: String!
+
+  """
+  `true` if the organization has Premium status.
+  """
+  isPremium: Boolean
+
+  """
+  When the Store Owner most recently accepted the Terms & Conditions.
+  If they have not accepted at all, this will be null.
+  """
+  acceptedTermsAndConditionsAt: DateTime
+
+  """
+  The groups that the organization is a part of
+  """
+  groups: [OrganizationGroup!]!
+
+  """
+  The available event templates that this organization can use
+  """
+  availableTemplates: [EventTemplate!]!
+
+  """
+
+  """
+  templateUsages: [TemplateUsage!]!
+
+  """
+  The roles that have been granted for this organization specifically. Does not
+  include WPN_ADMIN grants, which are not organization-specific.
+  """
+  roles: [Role!]!
+
+  """
+  A list of the venues for this organization.
+  """
+  venues: [Venue!]!
+}
+
+"""
+
+"""
+type OrganizationGroup {
+  """
+  The id of this group that comes from Contentful
+  """
+  id: ID!
+
+  """
+  The name of this group that is retrieved from Contentful
+  """
+  name: String
+
+  """
+  If this group marks this organization that it can only host Online events
+  """
+  onlineOnly: Boolean
+}
+
+"""
+
+"""
+type EventTemplate {
+  """
+
+  """
+  id: ID!
+
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  firstPublishedAt: DateTime!
+
+  """
+  When does this template start and is able to be viewed within EventLink
+  """
+  startDate: DateTime
+
+  """
+  When does this template end and is no longer shown within EventLink
+  """
+  endDate: DateTime
+
+  """
+  Does this template ever end?
+  """
+  isEvergreen: Boolean
+
+  """
+  Does this tempalte come with promotional product?
+  """
+  hasPromoProduct: Boolean
+
+  """
+  Is this template supposed to be shown above the other templates
+  """
+  featured: Boolean
+
+  """
+  How many of this template can be created per organization
+  """
+  templateQuota: Int
+
+  """
+  The url to the relavant WPN article for this template
+  """
+  wpnArticle: String
+
+  """
+  The url to the image to be used for templates when browsing
+  """
+  keyArt: String
+
+  """
+
+  """
+  groupsAvailable: [OrganizationGroupOption!]!
+
+  """
+
+  """
+  fieldRules: [FieldRuleOption!]!
+
+  """
+
+  """
+  tags: Tags!
+}
+
+"""
+
+"""
+type OrganizationGroupOption {
+  """
+
+  """
+  id: ID!
+
+  """
+
+  """
+  name: String!
+}
+
+"""
+
+"""
+type FieldRuleOption {
+  """
+
+  """
+  id: ID!
+
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  fieldName: String!
+
+  """
+
+  """
+  rule: Rule!
+}
+
+"""
+A rule will hold the type of rule as well as the value that the WPN Admin has given in Contentful
+"""
+type Rule {
+  """
+
+  """
+  rule: String!
+
+  """
+
+  """
+  value: JSON
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+
+"""
+type Tags {
+  """
+
+  """
+  tags: [String!]!
+}
+
+"""
+
+"""
+type TemplateUsage {
+  """
+
+  """
+  templateId: ID!
+
+  """
+
+  """
+  count: Int
+}
+
+"""
+A location where an organization hosts events. Venues subject to approval by WPN Admins.
+"""
+type Venue {
+  """
+
+  """
+  id: ID!
+
+  """
+  The name of the venue.
+  """
+  name: String!
+
+  """
+  The latitude of the venue.
+  """
+  latitude: Float
+
+  """
+  The longitude of the venue.
+  """
+  longitude: Float
+
+  """
+  The physical address of the venue, formatted as plain text (with newlines).
+  """
+  address: String
+
+  """
+  The street address, part of the full physical address
+  """
+  streetAddress: String
+
+  """
+  City, part of the full physical address
+  """
+  city: String
+
+  """
+  State/Territory, part of the full physical address
+  """
+  state: String
+
+  """
+  Country, part of the full physical address
+  """
+  country: String
+
+  """
+  Postal Code, part of the full physical address
+  """
+  postalCode: String
+
+  """
+  The time zone of the venue, taken from https://www.iana.org/time-zones
+  """
+  timeZone: String
+
+  """
+  The phone number of the venue.
+  """
+  phoneNumber: String
+
+  """
+  The email address of the venue.
+  """
+  emailAddress: String
+
+  """
+  The Google Place ID of the venue.
+  """
+  googlePlaceId: String
+
+  """
+  The maximum capacity of the venue.
+  """
+  capacity: Int
+
+  """
+  Any additional notes about the venue.
+  """
+  notes: String
+
+  """
+  Whether this venue has been approved by the WPN team.
+  """
+  isApproved: Boolean
+}
+
+"""
+An event is an occurrence of Organized Play. Example: Mox Boarding House FNM 10/4/2019.
+"""
+type Event {
+  """
+
+  """
+  id: ID!
+
+  """
+  The organization that is running the event.
+  """
+  organization: Organization!
+
+  """
+  The venue hosting the event. If this field is `null`, then the event is happening
+  at the organization's location.
+  """
+  venue: Venue
+
+  """
+  The title of the event.
+  """
+  title: String!
+
+  """
+  The description of the event.
+  """
+  description: String
+
+  """
+  DEPRECATED. The format of the event. Please use eventFormat instead.
+  """
+  format: EventFormatEnum
+
+  """
+  DEPRECATED. If this event has a Limited format (such as Draft or Sealed), the set that
+  will be in use. Please use cardSet instead.
+  """
+  limitedSet: LimitedSet
+
+  """
+  The Rules Enforcement Level for the event.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event.
+  """
+  pairingType: PairingType!
+
+  """
+  The entry fee for this event, if any. Defaults to zero US dollars.
+  """
+  entryFee: Money!
+
+  """
+  The time that the event is scheduled to begin, for use in calendaring tools. This
+  is not necessarily the time that the event will actually begin.
+  """
+  scheduledStartTime: DateTime
+
+  """
+  The time at which an authorized user started the event. Not necessarily the same
+  time that its first round began. `null` unless the event has been started.
+  """
+  actualStartTime: DateTime
+
+  """
+  An estimate of when the event will conclude.
+  """
+  estimatedEndTime: DateTime
+
+  """
+  The time at which an authorized user ended the event. Not necessarily the same
+  time that its last round ended. `null` unless the event has been ended.
+  """
+  actualEndTime: DateTime
+
+  """
+  Events are in the SCHEDULED status upon creation and until they are explicitly
+  started by an authorized user. When they are started, they will transition to
+  DRAFTING. When the first round is started, the event will move to ROUNDACTIVE
+  and then ROUNDCERTIFIED once all scores for the round are recorded. It moves
+  back and forth between ROUNDACTIVE and ROUNDCERTIFIED until the last round
+  has been certified. When an authorized user ends the event, it will move to
+  ENDED. An event will be CANCELLED only if it is deleted without ever having
+  been started.
+  """
+  status: EventStatus!
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  The number of players currently registered for this event. This is a simple count
+  of registrations; does not subtract drops.
+  """
+  numberOfPlayers: Int
+
+  """
+  A short (generally 6-character) string that uniquely identifies this event. Used
+  by the player experience for easy event signup.
+  """
+  shortCode: String
+
+  """
+  The tags used by Store and Event Locator for this event.
+  """
+  tags: [String!]!
+
+  """
+  The latitude of the event's location.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. Does not include HTML; uses line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will have a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplate: EventTemplate
+
+  """
+  The persona id of the user that created this event.
+  """
+  createdBy: ID
+
+  """
+  If an event was created as part of a group this will have a value. Otherwise it will be null.
+  """
+  groupId: ID
+
+  """
+  If this event has a Limited format (such as Draft or Sealed), the set that will be in use.
+  """
+  cardSet: CardSet
+
+  """
+  The format of the event.
+  """
+  eventFormat: EventFormat
+
+  """
+  The incidents that have been reported during this event.
+  """
+  incidents: [Incident!]
+
+  """
+  The incidents that have been reported during this event for a player.
+  """
+  playerIncidents(personaId: String): [Incident!]
+
+  """
+  The game state of an event tracks all of the things related to running the
+  event: pods, pairings, rounds, matches, match results, and standings. May
+  be `null` if the event is still in `SCHEDULED` status.
+  """
+  gameState: GameState
+
+  """
+  The list of people who have indicated their interest in this event but who
+  have not yet paid or been registered. Event-Res calls this "reservations."
+  """
+  interestedPlayers: [Registration!]
+
+  """
+  The list of people who have paid and been assigned a spot in the event.
+  Event-Res calls this "registrations."
+  """
+  registeredPlayers: [Registration!]
+}
+
+"""
+The main formats are supported along with OTHER for any format that doesn't fit and
+WOTC_DRAFT, a special draft format for WOTC Draft Night.
+The description of each enum value gives you the i18n key of the format name.
+"""
+enum EventFormatEnum {
+  """
+  format__wotc-draft
+  """
+  WOTC_DRAFT
+
+  """
+  format__booster-draft
+  """
+  BOOSTER_DRAFT
+
+  """
+  format__sealed-deck
+  """
+  SEALED_DECK
+
+  """
+  format__brawl
+  """
+  BRAWL
+
+  """
+  format__pauper
+  """
+  PAUPER
+
+  """
+  format__vintage
+  """
+  VINTAGE
+
+  """
+  format__legacy
+  """
+  LEGACY
+
+  """
+  format__modern
+  """
+  MODERN
+
+  """
+  format__standard
+  """
+  STANDARD
+
+  """
+  format__pioneer
+  """
+  PIONEER
+
+  """
+  format__commander2
+  """
+  COMMANDER2
+
+  """
+  format__other
+  """
+  OTHER
+}
+
+"""
+For Limited events, the specific release set that will be used.
+The description of each enum value gives you the i18n key of the format name.
+"""
+enum LimitedSet {
+  """
+  set__theros-beyond-death
+  """
+  THEROS_BEYOND_DEATH
+
+  """
+  set__throne-of-eldraine
+  """
+  THRONE_OF_ELDRAINE
+
+  """
+  set__core-set2020
+  """
+  CORE_SET_2020
+
+  """
+  set__modern-horizons
+  """
+  MODERN_HORIZONS
+
+  """
+  set__war-of-the-spark
+  """
+  WAR_OF_THE_SPARK
+
+  """
+  set__ravnica-allegiance
+  """
+  RAVNICA_ALLEGIANCE
+
+  """
+  set__guilds-of-ravnica
+  """
+  GUILDS_OF_RAVNICA
+
+  """
+  set__core-set2019
+  """
+  CORE_SET_2019
+
+  """
+  set__dominaria
+  """
+  DOMINARIA
+
+  """
+  set__commander2019
+  """
+  COMMANDER_2019
+
+  """
+  set__commander2018
+  """
+  COMMANDER_2018
+
+  """
+  set__battlebond
+  """
+  BATTLEBOND
+
+  """
+  set__ultimate-masters
+  """
+  ULTIMATE_MASTERS
+
+  """
+  set__masters25
+  """
+  MASTERS_25
+
+  """
+  set__other
+  """
+  OTHER
+}
+
+"""
+Rules Enforcement Levels (REL) are a means to communicate to the players
+and judges what expectations they can have of the tournament in terms of
+rigidity of rules enforcement, technically correct play, and procedures used.
+The description of each enum value gives you the i18n key of the format name.
+"""
+enum RulesEnforcementLevel {
+  """
+  rel__casual
+  """
+  CASUAL
+
+  """
+  rel__regular
+  """
+  REGULAR
+
+  """
+  rel__competitive
+  """
+  COMPETITIVE
+
+  """
+  rel__professional
+  """
+  PROFESSIONAL
+}
+
+"""
+The pairing method of an event is used to determine how players are paired
+against each other (except for "player list only", since we do not perform
+any pairings at all in that case).
+"""
+enum PairingType {
+  """
+  pairing__swiss
+  """
+  SWISS
+
+  """
+  pairing__single-elimination
+  """
+  SINGLE_ELIMINATION
+
+  """
+  pairing__player-list-only
+  """
+  PLAYER_LIST_ONLY
+}
+
+"""
+In order to accurately track and display prices to users around the world, we
+store currency amounts in integer minor units (e.g, cents) alongside an ISO 4217
+currency code.
+"""
+type Money {
+  """
+  Amounts are specified in minor currency units (e.g.: cents).
+  """
+  amount: Int!
+
+  """
+  The ISO 4217 currency code, expressed as a string.
+  """
+  currency: CurrencyCode!
+}
+
+"""
+
+"""
+scalar CurrencyCode
+
+"""
+
+"""
+enum EventStatus {
+  """
+  The default, initial state of a newly-created event: scheduled but not yet active
+  """
+  SCHEDULED
+
+  """
+  At least one player has been registered but the event has not yet been paired
+  """
+  PLAYERREGISTRATION
+
+  """
+  Player registration is complete and the first round is ready, with pairings.
+  Note that this status is not used in a Draft tournament, which has its own
+  pre-round states.
+  """
+  ROUNDREADY
+
+  """
+  Player registration is complete and the players have been assigned to draft pods.
+  """
+  DRAFTING
+
+  """
+  Drafting is complete and players are expected to construct their limited deck.
+  """
+  DECKCONSTRUCTION
+
+  """
+  A round of the event is currently being played. (You can check the currentRound of
+  the Event object to find out which round it is.)
+  """
+  ROUNDACTIVE
+
+  """
+  All scores for the most recently played round have been recorded and certified, but the
+  next round (if any) has not yet begun. Pairings for the next round, if any, are available.
+  """
+  ROUNDCERTIFIED
+
+  """
+  The event has ended normally.
+  """
+  ENDED
+
+  """
+  The event was cancelled before play completed.
+  """
+  CANCELLED
+
+  """
+  The event did not start within 7 days of its scheduled start time and has been expired.
+  """
+  EXPIRED
+
+  """
+  (Deprecated) the event is currently active. Replaced by DRAFTING, DECK_CONSTRUCTION,
+  ROUND_READY, ROUND_ACTIVE, and ROUND_CERTIFIED.
+  """
+  RUNNING
+}
+
+"""
+A card set
+"""
+type CardSet {
+  """
+  The type-specific, unique-identifier of this card set
+  """
+  id: ID!
+
+  """
+  The name of the set
+  """
+  name: String!
+
+  """
+  When the set was released
+  """
+  releaseDate: DateTime!
+}
+
+"""
+Ways to play Magic: The Gathering
+"""
+type EventFormat {
+  """
+  The type-specific, unique-identifier of this event format
+  """
+  id: ID!
+
+  """
+  The name of the format
+  """
+  name: String!
+
+  """
+  A short description of this format
+  """
+  blurb: String
+
+  """
+  Whether tournament organizers are required to select a card set when scheduling events in this format
+  """
+  requiresSetSelection: Boolean!
+
+  """
+  Whether events in this format include a Drafting phase
+  """
+  includesDraft: Boolean!
+
+  """
+  Whether events in this format include a Deck Construction phase
+  """
+  includesDeckbuilding: Boolean!
+
+  """
+  Whether this format is exclusively available to internal Wizards of the Coast events
+  """
+  wizardsOnly: Boolean!
+
+  """
+  A CSS color specifier for the color to use to visually distinguish the format
+  """
+  color: String
+}
+
+"""
+
+"""
+type Incident {
+  """
+  The ID of the incident.
+  """
+  id: ID!
+
+  """
+  The ticket ID of this incident in Zendesk. Will be `null` if the incident
+  has not yet been stored in Zendesk.
+  """
+  ticketId: ID
+
+  """
+  The person who reported the incident.
+  """
+  reporter: User!
+
+  """
+  The person who is the subject of the incident.
+  """
+  offender: Registration!
+
+  """
+  The event during which the incident occurred.
+  """
+  event: Event!
+
+  """
+  The infraction that occurred.
+  """
+  infraction: Infraction!
+
+  """
+  The penalty that was assessed.
+  """
+  penalty: Penalty!
+
+  """
+  The round number during which the incident occurred.
+  """
+  roundNumber: Int!
+
+  """
+  Comment about this incident.
+  """
+  comment: String
+
+  """
+  The time at which the incident was reported.
+  """
+  reportedAt: DateTime!
+}
+
+"""
+A participant in an event, who may or may not match a user in the platform accounts system.
+"""
+type Registration {
+  """
+  The ID of the registration. BEWARE: the ID of a registration of an interestedPlayer may match
+  the ID of a registration of a *different* registeredPlayer. This is expected to be OK because
+  we don't provide any mutations that refer to the ID of an interestedPlayer.
+  """
+  id: ID!
+
+  """
+  Whether we found a Wizards account matching this registrant, or created a guest account for them.
+  """
+  status: PlatformStatus
+
+  """
+  The persona ID of this registrant, if they have a Wizards account; i.e., if their status is FOUND or GUEST.
+  """
+  personaId: ID
+
+  """
+  The registrant's display name as returned from Platform.
+  """
+  displayName: String
+
+  """
+  The registrant's email address as returned from Platform.
+  """
+  emailAddress: String
+
+  """
+  The registrant's first name.
+  """
+  firstName: String
+
+  """
+  The registrant's last name.
+  """
+  lastName: String
+
+  """
+  Preferred table number (for players that need some accomodation).
+  """
+  preferredTableNumber: Int
+
+  """
+  Get an incident by ID.
+  """
+  incidents(eventId: ID!): [Incident]
+}
+
+"""
+Whether this registration matches a Wizards account, a guest Wizards account, or has no match.
+"""
+enum PlatformStatus {
+  """
+  This registration matches a real Wizard account.
+  """
+  FOUND
+
+  """
+  This registration does not match a real Wizards account, and will have no persona ID.
+  """
+  NOTFOUND
+
+  """
+  This registration is for a temporary guest account that has a persona ID.
+  """
+  GUEST
+}
+
+"""
+An infraction
+"""
+type Infraction {
+  """
+  The type-specific, unique-identifier of this infraction
+  """
+  id: ID!
+
+  """
+  The name of the infraction
+  """
+  name: String!
+
+  """
+  The category of the infraction
+  """
+  category: InfractionCategory!
+
+  """
+  The default penalty to apply to incidents of this infraction.
+  This should be overridable by the judge entering the incident.
+  """
+  defaultPenalty: Penalty
+}
+
+"""
+An infraction categoy
+"""
+type InfractionCategory {
+  """
+  The type-specific, unique-identifier of this infraction category
+  """
+  id: ID!
+
+  """
+  The name of the category
+  """
+  name: String!
+
+  """
+  The order this infraction category should be displayed when in a list
+  """
+  order: Int!
+
+  """
+  The infractions belonging to this category
+  """
+  infractions: [Infraction!]!
+}
+
+"""
+A penalty for an incident
+"""
+type Penalty {
+  """
+  The type-specific, unique-identifier of this penalty
+  """
+  id: ID!
+
+  """
+  The name of the penalty, e.g. Warning, Disqualification
+  """
+  name: String!
+
+  """
+  The order this penalty should be displayed when in a list
+  """
+  order: Int!
+}
+
+"""
+
+"""
+type GameState {
+  """
+
+  """
+  id: ID!
+
+  """
+  The minimum number of rounds required to reach a winner.
+  """
+  minRounds: Int
+
+  """
+  The list of draft pod assignments for the event. Only applicable for a draft formats
+  (e.g., `WOTC_DRAFT`).
+  """
+  pods: [Pod!]
+
+  """
+  The list of draft pod assignments for the event after the cut to top 8. Fairly
+  redundant, since this will always match the top 8 ranked players (there is only
+  one pod). Only applicable for a draft formats (e.g., `WOTC_DRAFT`).
+  """
+  top8Pods: [Pod!]
+
+  """
+  The time that the draft timer was started. Only applicable for draft formats (e.g.,
+  `WOTC_DRAFT`). May be `null` if the event is not drafting or the timer has not
+  been started.
+  """
+  draftTimerStartTime: DateTime
+
+  """
+  The time at which the draft timer reaches 0. Only applicable for draft formats (e.g.,
+  `WOTC_DRAFT`). May be `null` if the event is not drafting or the timer has not
+  been started.
+  """
+  draftTimerExpirationTime: DateTime
+
+  """
+  If present, the time at which the draft was ended, that is, the time that the first
+  round was created. May be `null` if the event is not drafting or the first round
+  has not yet been created.
+  """
+  draftEndTime: DateTime
+
+  """
+  The time that the top 8 draft timer was started. Only applicable for draft formats
+  (e.g., `WOTC_DRAFT`) that have a cut to top 8. May be `null` if the event is
+  not drafting, there is no top 8 cut, or the timer has not been started.
+  """
+  top8DraftTimerStartTime: DateTime
+
+  """
+  The time that the top 8 draft timer was started. Only applicable for draft formats
+  (e.g., `WOTC_DRAFT`) that have a cut to top 8. May be `null` if the event is
+  not drafting, there is no top 8 cut, or the timer has not been started.
+  """
+  top8DraftTimerExpirationTime: DateTime
+
+  """
+  (e.g., `WOTC_DRAFT`) that have a cut to top 8. May be `null` if the event is
+  not drafting, there is no top 8 cut, or the timer has not been started.
+
+  If present, the time at which the top 8 draft was ended, that is, the time that the
+  quarterfinal round was created. May be `null` if the event is not drafting, there
+  is no top 8 cut, or the timer has not been started.
+  """
+  top8DraftEndTime: DateTime
+
+  """
+  The time that the deck construction timer was started. Only applicable for sealed formats (e.g.,
+  `SEALED_DECK`). May be `null` if the event is not sealed or the timer has not
+  been started.
+  """
+  constructionTimerStartTime: DateTime
+
+  """
+  The time at which the deck construction timer reaches 0. Only applicable for sealed formats (e.g.,
+  `SEALED_DECK`). May be `null` if the event is not sealed or the timer has not
+  been started.
+  """
+  constructionTimerExpirationTime: DateTime
+
+  """
+  If present, the time at which the deck construction was ended, that is, the time that the first
+  round was created. May be `null` if the event is not sealed or the first round
+  has not yet been created.
+  """
+  constructionTimeEndTime: DateTime
+
+  """
+  The table seat assignments for players in a sealed constructed event.
+  """
+  constructedSeats: [Seat!]
+
+  """
+  The number of the current round. Will be 0 before the first round starts.
+  """
+  currentRoundNumber: Int!
+
+  """
+  The current round of the event. May be `null` if no rounds have been created.
+  """
+  currentRound: Round
+
+  """
+  The list of rounds for this event. May be empty if no rounds have been created.
+  """
+  rounds: [Round!]!
+
+  """
+  The standings for this event, based on completed and certified rounds; will
+  not include match results from the current round.
+  """
+  standings: [TeamStanding!]!
+
+  """
+  A list of the teams who have dropped out of the event.
+  """
+  drops: [Drop!]!
+
+  """
+  Information about upcoming rounds/phases of the event.
+  """
+  nextRoundMeta: RoundMetadata
+
+  """
+  The pairing type that will determine the way to handle pairings with regards to pods
+  """
+  podPairingType: PodPairingType
+
+  """
+  GUID or UUID of that represents Timer ID of Timer GraphQL for Drafting
+  """
+  draftTimerID: ID
+
+  """
+  GUID or UUID of that represents Timer ID of Timer GraphQL for Deck Construction
+  """
+  constructDraftTimerID: ID
+
+  """
+  GUID or UUID of that represents Timer ID of Timer GraphQL for Top8 Drafting
+  """
+  top8DraftTimerID: ID
+}
+
+"""
+
+"""
+type Pod {
+  """
+  The pod number, a simple 1-based index. Not expected to correspond directly to
+  any particular real-world table number.
+  """
+  number: Int!
+
+  """
+  The list of seat assignments for the pod.
+  """
+  seats: [Seat!]!
+}
+
+"""
+
+"""
+type Seat {
+  """
+  The seat number, a simple 1-based index. Not expected to correspond directly to
+  any particular real-world seat number.
+  """
+  number: Int!
+
+  """
+  The persona ID of the player assigned to this seat, if any.
+  """
+  personaId: ID
+
+  """
+  The display name of the player assigned to this seat, if any.
+  """
+  displayName: String
+
+  """
+  The email address of the player assigned to this seat, if any.
+  """
+  emailAddress: String
+
+  """
+  The first name of the player assigned to this seat, if any.
+  """
+  firstName: String
+
+  """
+  The last name of the player assigned to this seat, if any.
+  """
+  lastName: String
+
+  """
+  Id of the team associated with the player
+  """
+  team: Team
+}
+
+"""
+
+"""
+type Team {
+  """
+  The ID of the team.
+  """
+  id: ID!
+
+  """
+  The unique key for the team to be used in the client side cache.
+  """
+  cacheId: ID
+
+  """
+  The name of the team.
+  """
+  name: String
+
+  """
+  The players who make up the team.
+  """
+  players: [User!]!
+
+  """
+  Game level results
+  """
+  results: [TeamResult!]
+}
+
+"""
+
+"""
+type TeamResult {
+  """
+  holds game-level draws
+  """
+  draws: Int!
+}
+
+"""
+
+"""
+type Round {
+  """
+  A fabricated ID, used so that Apollo Client can easily cache Round objects.
+  """
+  id: ID!
+
+  """
+  The round number. The first round is numbered 1.
+  """
+  number: Int!
+
+  """
+  Is this the final round?
+  """
+  isFinalRound: Boolean
+
+  """
+  If this round is a Playoff round
+  """
+  isPlayoff: Boolean
+
+  """
+  Have this round's scores been certified?
+  """
+  isCertified: Boolean
+
+  """
+  If present, the time that the round began, measured from the time that the round timer was started.
+  """
+  actualStartTime: DateTime
+
+  """
+  If present, the time that the round ended.
+  """
+  actualEndTime: DateTime
+
+  """
+  If present, the time at which the round timer reaches 0.
+  """
+  roundTimerExpirationTime: DateTime
+
+  """
+  The matches (pairings) for this round.
+  """
+  matches: [Match!]!
+
+  """
+  The pairingStrategy for this round.
+  """
+  pairingStrategy: String
+
+  """
+  Is this a round that the rollback option is available
+  """
+  canRollback: Boolean
+
+  """
+  GUID or UUID of that represents Timer ID of Timer GraphQL
+  """
+  timerID: ID
+}
+
+"""
+
+"""
+type Match {
+  """
+  The ID of the match.
+  """
+  id: ID!
+
+  """
+  The unique key for the match to be used in the client side cache.
+  """
+  cacheId: ID
+
+  """
+  Is this match a bye?
+  """
+  isBye: Boolean
+
+  """
+  The teams participating in this match. By convention the first time in this array is
+  the 'left' team, and the second is the 'right' team. This will need to change when
+  we support multi-team games such as Commander.
+  """
+  teams: [Team!]!
+
+  """
+  The number of game wins the left (first) team has achieved in this match. Will be 0 if the
+  left team is being dropped. `null` if no game results have yet been recorded for this match.
+  """
+  leftTeamWins: Int
+
+  """
+  The number of game wins the right (second) team has achieved in this match. Will be 0 if this
+  is a bye, or if the right team is being dropped. `null` if no game results have yet been
+  recorded for this match.
+  """
+  rightTeamWins: Int
+
+  """
+  Is the left team being dropped this round?
+  """
+  isLeftTeamDropped: Boolean
+
+  """
+  Is the right team being dropped this round?
+  """
+  isRightTeamDropped: Boolean
+
+  """
+  The table number at which the match will be played.
+  """
+  tableNumber: Int
+}
+
+"""
+
+"""
+type TeamStanding {
+  """
+  The team that this standing is for.
+  """
+  team: Team!
+
+  """
+  The rank of this standing in the scope of the event. The team with the best record
+  has rank 1, the second-best rank 2, and so on up to the number of teams in the event.
+  Even if two teams have identical records, their ranks will still differ due to our
+  various tiebreaker rules.
+  """
+  rank: Int!
+
+  """
+  The number of match wins the team has recorded in this event to date. Only includes
+  results from certified rounds (i.e., not the round currently underway).
+  """
+  wins: Int!
+
+  """
+  The number of match losses the team has recorded in this event to date. Only includes
+  results from certified rounds (i.e., not the round currently underway).
+  """
+  losses: Int!
+
+  """
+  The number of match draws the team has recorded in this event to date. Only includes
+  results from certified rounds (i.e., not the round currently underway).
+  """
+  draws: Int!
+
+  """
+  The number of match byes the team has recorded in this event to date. Only includes
+  results from certified rounds (i.e., not the round currently underway).
+  """
+  byes: Int!
+
+  """
+  The number of points the team has scored so far in this event.
+  """
+  matchPoints: Int!
+
+  """
+  The team's gameWinPercent. See the Magic Tournament Rules for more information on
+  how this is calculated.
+  """
+  gameWinPercent: Float!
+
+  """
+  The opponentGameWinPercent. See the Magic Tournament Rules for more information on
+  how this is calculated.
+  """
+  opponentGameWinPercent: Float!
+
+  """
+  The opponentMatchWinPercent. See the Magic Tournament Rules for more information on
+  how this is calculated.
+  """
+  opponentMatchWinPercent: Float!
+}
+
+"""
+
+"""
+type Drop {
+  """
+  The ID of the team that dropped.
+  """
+  teamId: ID!
+
+  """
+  The last round number that the team participated in. Will be 0 if the team dropped
+  before pairing for the first round.
+  """
+  roundNumber: Int!
+}
+
+"""
+Details about what phase of the UI should happen next.
+"""
+type RoundMetadata {
+  """
+  Does the next round have a preceding draft step?
+  """
+  hasDraft: Boolean
+
+  """
+  Does the next round have a preceding deck construction step?
+  """
+  hasDeckConstruction: Boolean
+}
+
+"""
+Determines the way that a Swiss Draft event will create it's pairings. InPod will only create pairings with other players
+in the same pod. While CrossPod will create pairings based on all possible pairings with any of the other players in their
+own pod or another.
+"""
+enum PodPairingType {
+  """
+  Pairings will only consider the same pod
+  """
+  IN_POD
+
+  """
+  Pairings will consider all pods
+  """
+  CROSS_POD
+}
+
+"""
+A type for specifying search criteria for events.
+"""
+input EventFilter {
+  """
+  The page of results to return, 0-based. If not provided, the first page will be returned.
+  """
+  page: Int
+
+  """
+  The maximum number of results to return. If not provided, at most 30 results will be returned.
+  """
+  pageSize: Int
+
+  """
+  The earliest datetime for returned events.
+  """
+  startDate: DateTime
+
+  """
+  The latest datetime for returned events.
+  """
+  endDate: DateTime
+
+  """
+  A string to filter events by. Will perform a 'contains' search on the title and description fields.
+  """
+  searchText: String
+
+  """
+  Limit search results to events occurring at a specific venue.
+  """
+  venueId: ID
+
+  """
+  Limit search results to events with a specific format.
+  """
+  format: EventFormatEnum
+}
+
+"""
+A type for returning a page of event search results.
+"""
+type EventPage {
+  """
+
+  """
+  pageInfo: PageInfo!
+
+  """
+
+  """
+  hasMoreResults: Boolean
+
+  """
+
+  """
+  events: [Event!]!
+}
+
+"""
+A relay-style type for pagination information. NB: does not follow the Relay spec.
+"""
+type PageInfo {
+  """
+  Which page of results the returned list represents, in the context of `pageSize`.
+  """
+  page: Int!
+
+  """
+  The number of results per page that was used for the search.
+  """
+  pageSize: Int!
+
+  """
+  The total number of results that were found for the search.
+  """
+  totalResults: Int!
+}
+
+"""
+An event that includes recurrence info as well
+"""
+type RecurrenceEvent {
+  """
+
+  """
+  id: ID!
+
+  """
+  The organization that is running the event.
+  """
+  organization: Organization!
+
+  """
+  The venue hosting the event. If this field is `null`, then the event is happening
+  at the organization's location.
+  """
+  venue: Venue
+
+  """
+  The title of the event.
+  """
+  title: String!
+
+  """
+  The description of the event.
+  """
+  description: String
+
+  """
+  DEPRECATED. The format of the event. Please use eventFormat instead.
+  """
+  format: EventFormatEnum
+
+  """
+  DEPRECATED. If this event has a Limited format (such as Draft or Sealed), the set that
+  will be in use. Please use cardSet instead.
+  """
+  limitedSet: LimitedSet
+
+  """
+  The Rules Enforcement Level for the event.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event.
+  """
+  pairingType: PairingType!
+
+  """
+  The entry fee for this event, if any. Defaults to zero US dollars.
+  """
+  entryFee: Money!
+
+  """
+  The time that the event is scheduled to begin, for use in calendaring tools. This
+  is not necessarily the time that the event will actually begin.
+  """
+  scheduledStartTime: DateTime
+
+  """
+  The time at which an authorized user started the event. Not necessarily the same
+  time that its first round began. `null` unless the event has been started.
+  """
+  actualStartTime: DateTime
+
+  """
+  An estimate of when the event will conclude.
+  """
+  estimatedEndTime: DateTime
+
+  """
+  The time at which an authorized user ended the event. Not necessarily the same
+  time that its last round ended. `null` unless the event has been ended.
+  """
+  actualEndTime: DateTime
+
+  """
+  Events are in the SCHEDULED status upon creation and until they are explicitly
+  started by an authorized user. When they are started, they will transition to
+  DRAFTING. When the first round is started, the event will move to ROUNDACTIVE
+  and then ROUNDCERTIFIED once all scores for the round are recorded. It moves
+  back and forth between ROUNDACTIVE and ROUNDCERTIFIED until the last round
+  has been certified. When an authorized user ends the event, it will move to
+  ENDED. An event will be CANCELLED only if it is deleted without ever having
+  been started.
+  """
+  status: EventStatus!
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  The number of players currently registered for this event. This is a simple count
+  of registrations; does not subtract drops.
+  """
+  numberOfPlayers: Int
+
+  """
+  A short (generally 6-character) string that uniquely identifies this event. Used
+  by the player experience for easy event signup.
+  """
+  shortCode: String
+
+  """
+  The tags used by Store and Event Locator for this event.
+  """
+  tags: [String!]!
+
+  """
+  The latitude of the event's location.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. Does not include HTML; uses line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will have a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplate: EventTemplate
+
+  """
+  The persona id of the user that created this event.
+  """
+  createdBy: ID
+
+  """
+  If an event was created as part of a group this will have a value. Otherwise it will be null.
+  """
+  groupId: ID
+
+  """
+  The frequency at which to create a group of recurring events
+  """
+  frequency: RecurrenceFrequency!
+
+  """
+  The date that the recurrence should stop trying to create events at, in ISO format.
+  """
+  repeatUntil: String!
+
+  """
+  Day of the week mask, used only for creating recurring events when the frequency is WEEKLY
+  """
+  dotWMask: Int
+
+  """
+  Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
+  """
+  isDotWBound: Boolean
+}
+
+"""
+The frequency, that when creating a group of recurring events, the events
+created are bound by. This will result in how the events are created and
+how many are created.
+"""
+enum RecurrenceFrequency {
+  """
+  frequency__daily
+  """
+  DAILY
+
+  """
+  frequency__weekly
+  """
+  WEEKLY
+
+  """
+  frequency__monthly
+  """
+  MONTHLY
+}
+
+"""
+In order to accurately track and display times to users around the world, we
+store datetimes in ISO 8601 format with an offset.
+"""
+type Timer {
+  """
+  The ID of the timer.
+  """
+  id: ID!
+
+  """
+  The state of the timer; whether it's running or halted.
+  """
+  state: TimerState!
+
+  """
+  The length of the timer, in milliseconds. 'null' if the timer is DELETED.
+  """
+  durationMs: Int
+
+  """
+  The time that the duration of the timer begins. 'null' if the timer is DELETED.
+  """
+  durationStartTime: DateTime
+
+  """
+  The current time at the server. Allows computation of timer skew. 'null' if the timer is DELETED.
+  """
+  serverTime: DateTime
+}
+
+"""
+
+"""
+enum TimerState {
+  """
+  The timer is stopped/paused.
+  """
+  HALTED
+
+  """
+  The timer is active.
+  """
+  RUNNING
+
+  """
+  The timer has been deleted.
+  """
+  DELETED
+}
+
+"""
+Provides filters and operators to search against the database of MagicCards This
+is the required argument type for the magicCards query field
+"""
+input MagicCardFilterInput {
+  """
+
+  """
+  name: [LogicalOperatorFilter]
+
+  """
+
+  """
+  rarity: [LogicalRarityInput]
+
+  """
+
+  """
+  cardType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  cardSubType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  cardSuperType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  manaCost: [LogicalManaCostInput]
+
+  """
+
+  """
+  convertedManaCost: RangeFilterInput
+
+  """
+
+  """
+  setName: [LogicalOperatorFilter]
+
+  """
+
+  """
+  setAbbreviation: [LogicalOperatorFilter]
+
+  """
+
+  """
+  collectorNumber: [LogicalOperatorFilter]
+
+  """
+
+  """
+  color: [LogicalOperatorFilter]
+
+  """
+
+  """
+  power: RangeFilterInput
+
+  """
+
+  """
+  toughness: RangeFilterInput
+
+  """
+
+  """
+  language: PrintedLanguage
+
+  """
+
+  """
+  rulesText: [LogicalOperatorFilter]
+
+  """
+
+  """
+  artists: [LogicalOperatorFilter]
+
+  """
+
+  """
+  flavorText: [LogicalOperatorFilter]
+
+  """
+
+  """
+  mark: [LogicalOperatorFilter]
+
+  """
+
+  """
+  formats: [LogicalLegalitiesInput]
+}
+
+"""
+An input type for specifying the logical operator and terms to evaluate cards by
+"""
+input LogicalOperatorFilter {
+  """
+
+  """
+  operator: LogicalOperator
+
+  """
+
+  """
+  terms: String
+}
+
+"""
+
+"""
+enum LogicalOperator {
+  """
+
+  """
+  AND
+
+  """
+
+  """
+  OR
+
+  """
+
+  """
+  NOT
+}
+
+"""
+An input type for specifying the logical operator and terms to evaluate the rarity of a card
+"""
+input LogicalRarityInput {
+  """
+
+  """
+  operator: LogicalOperator
+
+  """
+
+  """
+  rarity: MagicCardRarity
+}
+
+"""
+Magic cards rarity
+"""
+enum MagicCardRarity {
+  """
+
+  """
+  COMMON
+
+  """
+
+  """
+  UNCOMMON
+
+  """
+
+  """
+  RARE
+
+  """
+
+  """
+  MYTHIC_RARE
+}
+
+"""
+An input type for specifying the logical operator and terms to evaluate the Mana Cost of a card
+"""
+input LogicalManaCostInput {
+  """
+
+  """
+  operator: LogicalOperator
+
+  """
+
+  """
+  color: String
+
+  """
+
+  """
+  quantity: Int
+}
+
+"""
+An input type to evaluate cards by a range of integers
+"""
+input RangeFilterInput {
+  """
+
+  """
+  equal: Int
+
+  """
+
+  """
+  greaterThan: Int
+
+  """
+
+  """
+  greaterThanEqualto: Int
+
+  """
+
+  """
+  lessThan: Int
+
+  """
+
+  """
+  lessThanEqualto: Int
+}
+
+"""
+The language used on the card
+"""
+enum PrintedLanguage {
+  """
+
+  """
+  ENGLISH
+
+  """
+
+  """
+  FRENCH
+
+  """
+
+  """
+  ITALIAN
+
+  """
+
+  """
+  GERMAN
+
+  """
+
+  """
+  SPANISH
+
+  """
+
+  """
+  PORTUGUESE
+
+  """
+
+  """
+  RUSSIAN
+
+  """
+
+  """
+  KOREAN
+
+  """
+
+  """
+  JAPANESE
+
+  """
+
+  """
+  CHINESE_SIMPLIFIED
+
+  """
+
+  """
+  CHINESE_TRADITIONAL
+}
+
+"""
+An input type for specifying the logical operator and terms to evaluate the legalities of a card
+"""
+input LogicalLegalitiesInput {
+  """
+
+  """
+  operator: LogicalOperator
+
+  """
+
+  """
+  formatName: String
+
+  """
+
+  """
+  legalStatus: String
+}
+
+"""
+
+"""
+input MagicCardSortInput {
+  """
+
+  """
+  Order: SortOrder
+
+  """
+
+  """
+  SortBy: MagicCardSortCriteria
+}
+
+"""
+Order in which magic cards can sorted
+"""
+enum SortOrder {
+  """
+  ascending order
+  """
+  ASC
+
+  """
+  descending order
+  """
+  DESC
+}
+
+"""
+Magic card attribtes on which sorting can be performed
+"""
+enum MagicCardSortCriteria {
+  """
+  sort based on first name of artist in order
+  """
+  ARTISTS
+
+  """
+  sort based on release date chronological order
+  """
+  CHRONOLOGICAL
+
+  """
+  sort based on first word of card title
+  """
+  NAME
+
+  """
+  sort based on collectorNumber
+  """
+  COLLECTORNUMBER
+
+  """
+  sort based on Power
+  """
+  POWER
+
+  """
+  sort based on toughness
+  """
+  TOUGHNESS
+
+  """
+  sort based on converted manna cost
+  """
+  CONVERTEDMANACOST
+
+  """
+  sort based on Color
+  """
+  COLOR
+
+  """
+  sort based on Rarity
+  """
+  RARITY
+}
+
+"""
+
+"""
+type MagicCardSearchResult implements SearchResult {
+  """
+  The MagicCard objects that were found, after applying limit and offset pagination parameters
+  """
+  magicCards: [MagicCard!]!
+
+  """
+  The number of results returned for this page of the search; will always be
+  equal to or less than the limit specified on the query
+  """
+  currentPage: Int!
+
+  """
+  The total number of results for this search that exist in the data store.
+  Includes all results, not just those returned on this page
+  """
+  totalPages: Int!
+
+  """
+  Whether there exist search results before this page
+  """
+  hasPreviousPage: Boolean
+
+  """
+  Whether there exist search results beyond the end of this page
+  """
+  hasNextPage: Boolean
+
+  """
+  The total number of results for this search
+  """
+  totalResults: Int!
+}
+
+"""
+This interface formalizes the API's mechanism for pagination to guarantee that
+is the same across different kinds of searches
+"""
+interface SearchResult {
+  """
+  The number of results returned for this page of the search; will always be
+  equal to or less than the limit specified on the query
+  """
+  currentPage: Int!
+
+  """
+  The total number of results for this search that exist in the data
+  store.Includes all results, not just those returned on this page
+  """
+  totalPages: Int!
+
+  """
+  Whether there exist search results before this page
+  """
+  hasPreviousPage: Boolean
+
+  """
+  Whether there exist search results beyond the end of this page
+  """
+  hasNextPage: Boolean
+
+  """
+  The total number of results for this search
+  """
+  totalResults: Int!
+}
+
+"""
+A Magic: The Gathering card. It's the object that includes all of the latest
+rulings and legalities, as well as the official card rules text
+"""
+type MagicCard {
+  """
+  A unique ID for the card
+  """
+  id: ID!
+
+  """
+  A card is the color or colors of the mana symbols in its mana cost, regardless of the color of its frame
+  """
+  colors: [String]
+
+  """
+  The converted mana cost of the card
+  """
+  convertedManaCost: [Float]
+
+  """
+  All Magic cards have at least one face, and most have exactly one. Multi-faced
+  cards do exist, however: some are double-sided, and some even have more than
+  two sides. This field will be null unless isMultiFace is true
+  """
+  faces: [MagicCardFace!]
+
+  """
+  Whether this card has more than one face. This is true for double-sided cards
+  """
+  isMultiFace: Boolean
+
+  """
+  The relationType of a card if it is Multi Faced.
+  """
+  relationType: String
+
+  """
+  An array of objects listing whether the card is banned, restricted, suspended, or legal in each MagicFormat
+  """
+  legalities: [MagicCardLegality!]!
+
+  """
+  The loyalty of the card, if any.
+  """
+  loyalty: Int
+
+  """
+  The mana cost of the card
+  """
+  manaCost: MagicManaCost
+
+  """
+  The name of the card. With very few exceptions, card names are unique
+  """
+  name: String!
+
+  """
+  The latest official rules text of the card, if any
+  """
+  oracleText: [String]
+
+  """
+  The power of the card, if any. Usually a number, but may be a different symbol
+  """
+  power: [String]
+
+  """
+  A list of the physical card printings of this card. If you only need the most
+  recent printing of the card, use the latestPrinting field itself, as
+  retrieving that data is more performant
+  """
+  printings: [MagicCardPrinting!]
+
+  """
+  The most recent physical printing of this card
+  """
+  latestPrinting: MagicCardPrinting
+
+  """
+  Any rulings that have been made concerning this card
+  """
+  rulings: [MagicRuling]
+
+  """
+  A list of the subtypes that the card bears
+  """
+  subtypes: [String]
+
+  """
+  A list of the supertypes that the card bears
+  """
+  supertypes: [String]
+
+  """
+  The toughness of the card, if any. Usually a number, but may be a different symbol
+  """
+  toughness: [String]
+
+  """
+  A list of the types that the card bears
+  """
+  types: [String]
+}
+
+"""
+A MagicCardFace object contains fields that can vary for each face of a multi-faced card
+"""
+type MagicCardFace {
+  """
+
+  """
+  artistCredit: String
+
+  """
+
+  """
+  colors: [String]
+
+  """
+
+  """
+  convertedManaCost: Int
+
+  """
+
+  """
+  flavorText: String
+
+  """
+
+  """
+  thumbnailImageUrl: String
+
+  """
+
+  """
+  fullImageUrl: String
+
+  """
+
+  """
+  loyalty: Int
+
+  """
+
+  """
+  manaCost: MagicManaCost
+
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  oracleText: String
+
+  """
+
+  """
+  localizedOracleText: String
+
+  """
+
+  """
+  power: String
+
+  """
+
+  """
+  toughness: String
+
+  """
+
+  """
+  types: [String]
+
+  """
+
+  """
+  subtypes: [String]
+
+  """
+
+  """
+  supertypes: [String]
+}
+
+"""
+The string representation of a Magic card mana cost
+"""
+scalar MagicManaCost
+
+"""
+An object that tracks a particular card's legal status in a particular format
+"""
+type MagicCardLegality {
+  """
+  The ID of the card
+  """
+  cardId: ID
+
+  """
+  Different format types in which a magic game can be played
+  """
+  format: MagicFormat
+
+  """
+  The legal status of the card in the format
+  """
+  legalStatus: MagicCardLegalStatus
+}
+
+"""
+Different format types in which a magic game can be played
+"""
+type MagicFormat {
+  """
+  The type-specific unique identifier of this Format
+  """
+  id: ID!
+
+  """
+  The name of the Format
+  """
+  name: String!
+
+  """
+
+  """
+  blurb: String
+}
+
+"""
+Magic cards legality status
+"""
+enum MagicCardLegalStatus {
+  """
+
+  """
+  LEGAL
+
+  """
+
+  """
+  SUSPENDED
+
+  """
+
+  """
+  RESTRICTED
+
+  """
+
+  """
+  BANNED
+
+  """
+
+  """
+  NOTLEGAL
+}
+
+"""
+This type contains information about a card that is specific to a printing of that card
+"""
+type MagicCardPrinting {
+  """
+  A unique ID for the card printing
+  """
+  id: ID!
+
+  """
+  The artist credit line, if any
+  """
+  artistCredit: String
+
+  """
+  The collector number of the card in this printing. Usually but not always a number
+  """
+  collectorNumber: String
+
+  """
+  A card is the color or colors of the mana symbols in its mana cost, regardless of the color of its frame
+  """
+  colors: [String]
+
+  """
+  The converted mana cost of the card
+  """
+  convertedManaCost: Float
+
+  """
+  The mana cost of the card
+  """
+  manaCost: MagicManaCost
+
+  """
+  The name of the card. With very few exceptions, card names are unique
+  """
+  name: String!
+
+  """
+  The power of the card, if any. Usually a number, but may be a different symbol
+  """
+  power: String
+
+  """
+  The toughness of the card, if any. Usually a number, but may be a different symbol
+  """
+  toughness: String
+
+  """
+  The rarity of the card
+  """
+  rarity: String
+
+  """
+  A URL of a low-resolution image that represents the card printing
+  """
+  thumbnailImageUrl: String
+
+  """
+  A URL of a high-resolution image that represents the card printing
+  """
+  fullImageUrl: String
+
+  """
+  The text as it appears on the card. May differ from the card's normative Oracle text
+  """
+  printedText: String
+
+  """
+  The flavor text as it appears on the card
+  """
+  printedFlavorText: String
+
+  """
+  The set in which the card was printed
+  """
+  set: MagicCardSet!
+
+  """
+  An array of objects listing whether the card is banned, restricted, suspended, or legal in each MagicFormat
+  """
+  legalities: [MagicCardLegality!]
+
+  """
+  Watermarks on a card printing
+  """
+  watermark: String
+
+  """
+  A list of the supertypes that the card bears
+  """
+  supertypes: [String]
+
+  """
+  A list of the types that the card bears
+  """
+  types: [String]
+
+  """
+  A list of the subtypes that the card bears
+  """
+  subtypes: [String]
+
+  """
+  Languages that a card was printed in
+  """
+  languageCode: String
+}
+
+"""
+A Magic Card Set represents a collection set of magic cards
+"""
+type MagicCardSet {
+  """
+  The type-specific unique identifier of this card set
+  """
+  id: ID
+
+  """
+  The name of the set
+  """
+  name: String!
+
+  """
+  The abbreviation of the set name
+  """
+  abbreviation: String
+
+  """
+  When the set was released
+  """
+  releaseDate: DateTime!
+}
+
+"""
+A ruling is a clarification or addendum to the Magic rules that is specific to a particular Magic card
+"""
+type MagicRuling {
+  """
+  The ID of the ruling
+  """
+  id: ID
+
+  """
+  The ID of the card this ruling applies to
+  """
+  magicCardId: ID
+
+  """
+  The date on which the ruling was published
+  """
+  publicationDate: DateTime
+
+  """
+  The text of the ruling
+  """
+  text: String
+}
+
+"""
+Provides filters and operators to search against the database of MagicCards.This
+is the required argument type for the magicCards query field
+"""
+input MagicCardPrintingFilterInput {
+  """
+
+  """
+  name: [LogicalOperatorFilter]
+
+  """
+
+  """
+  rarity: [LogicalRarityInput]
+
+  """
+
+  """
+  cardType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  cardSubType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  cardSuperType: [LogicalOperatorFilter]
+
+  """
+
+  """
+  manaCost: [LogicalManaCostInput]
+
+  """
+
+  """
+  convertedManaCost: RangeFilterInput
+
+  """
+
+  """
+  setName: [LogicalOperatorFilter]
+
+  """
+
+  """
+  setAbbreviation: [LogicalOperatorFilter]
+
+  """
+
+  """
+  collectorNumber: [LogicalOperatorFilter]
+
+  """
+
+  """
+  color: [LogicalOperatorFilter]
+
+  """
+
+  """
+  power: RangeFilterInput
+
+  """
+
+  """
+  toughness: RangeFilterInput
+
+  """
+
+  """
+  language: PrintedLanguage
+
+  """
+
+  """
+  rulesText: [LogicalOperatorFilter]
+
+  """
+
+  """
+  artists: [LogicalOperatorFilter]
+
+  """
+
+  """
+  flavorText: [LogicalOperatorFilter]
+
+  """
+
+  """
+  mark: [LogicalOperatorFilter]
+
+  """
+
+  """
+  formats: [LogicalLegalitiesInput]
+}
+
+"""
+
+"""
+type MagicCardPrintingSearchResult implements SearchResult {
+  """
+  The MagicCardPrinting objects that were found, after applying limit and offset pagination parameters
+  """
+  magicCardPrintings: [MagicCardPrinting!]!
+
+  """
+  The number of results returned for this page of the search; will always be
+  equal to or less than the limit specified on the query
+  """
+  currentPage: Int!
+
+  """
+  The total number of results for this search that exist in the data store.
+  Includes all results, not just those returned on this page
+  """
+  totalPages: Int!
+
+  """
+  Whether there exist search results before this page
+  """
+  hasPreviousPage: Boolean
+
+  """
+  Whether there exist search results beyond the end of this page
+  """
+  hasNextPage: Boolean
+
+  """
+  The total number of results for this search
+  """
+  totalResults: Int!
+}
+
+"""
+A deck is a collection of Magic cards, divided into the main deck and sideboard.
+"""
+type Deck {
+  """
+
+  """
+  id: ID!
+
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  owner: DeckOwner!
+
+  """
+
+  """
+  isPrivate: Boolean!
+
+  """
+  List of Cards and Quantity,Default: page=1, size=10
+  """
+  cardQuantityConnection(page: Int = 1, size: Int = 10): CardQuantityConnection!
+}
+
+"""
+To establish the Ownership of a Deck.
+"""
+type DeckOwner {
+  """
+
+  """
+  accountId: ID!
+}
+
+"""
+A CardQuantityConnection provides paginated result set of magic cards.
+"""
+type CardQuantityConnection {
+  """
+
+  """
+  deckPageInfo: DeckPageInfo!
+
+  """
+
+  """
+  nodes: [CardQuantity]
+}
+
+"""
+Information about pagination in a connection.
+"""
+type DeckPageInfo {
+  """
+  Count of total items
+  """
+  totalItems: Int
+
+  """
+  Count of total Pages
+  """
+  totalPages: Int
+
+  """
+  Current page number
+  """
+  currentPage: Int
+
+  """
+  When paginating forwards, are there more items?
+  """
+  hasNextPage: Boolean
+}
+
+"""
+A CardQuantity is an entry in a deck, and represents a specific Magic card along
+with how many of that card are in the deck,and section of the deck the card is in.
+"""
+type CardQuantity {
+  """
+
+  """
+  cardId: ID!
+
+  """
+
+  """
+  quantity: Int!
+
+  """
+
+  """
+  deckSection: DeckSection!
+
+  """
+
+  """
+  card: MagicCard!
+}
+
+"""
+A section of a decklist, used for categorizing cards.
+"""
+enum DeckSection {
+  """
+  The main deck.
+  """
+  MAIN
+
+  """
+  The sideboard.
+  """
+  SIDEBOARD
+}
+
+"""
+A OwnedDeckConnection provides paginated result set of decks owned by current user.
+"""
+type OwnedDeckConnection {
+  """
+
+  """
+  deckPageInfo: DeckPageInfo!
+
+  """
+
+  """
+  nodes: [Deck]
+}
+
+type Mutation {
+  """
+  Create a new event.
+  """
+  createEvent(input: CreateEventInput!): Event
+
+  """
+  Update an event's details. Does not change an event's status; use the specific event status
+  mutations for that purpose.
+  """
+  updateEvent(input: UpdateEventInput!): Event
+
+  """
+  Create multiple events at the same time
+  """
+  batchCreateEvents(input: BatchCreateEventsInput!): BatchCreateResponse!
+
+  """
+  Creates multiple events using a recurrence.
+  """
+  createRecurringEvents(
+    input: CreateRecurringEventInput!
+  ): RecurringEventResponse
+
+  """
+  Creates multiple events using a recurrence.
+  """
+  updateRecurringEvents(
+    input: UpdateRecurringEventInput!
+  ): RecurringEventResponse
+
+  """
+  Creates multiple events using a recurrence.
+  """
+  deleteRecurringEvents(input: DeleteRecurringEventInput!): [ID]
+
+  """
+  Creates a new incident with associated infraction and penalty for an event.
+  """
+  createIncident(input: CreateIncidentInput!): Incident
+
+  """
+  Updates an existing incident.
+  """
+  updateIncident(input: UpdateIncidentInput!): Incident
+
+  """
+  Deletes an existing incident.
+  """
+  deleteIncident(input: DeleteIncidentInput!): Incident
+
+  """
+  Submit user feedback.
+  """
+  sendFeedback(input: FeedbackInput!): Feedback
+
+  """
+  Start an event. Will update the event status to RUNNING, set its actualStartTime, and (if
+  the event is a WOTC_DRAFT) perform podding for the first round.
+  """
+  startEvent(input: StartEventInput!): Event
+
+  """
+  End an event. Will update the event status to ENDED, and set its actualEndTime.
+  """
+  endEvent(id: ID!): Event
+
+  """
+  Cancel an event. This sets the event status to CANCELLED, but makes no other changes
+  to the event. In particular, it does not delete it, and does not remove rounds, matches,
+  results, etc.
+  """
+  cancelEvent(id: ID!): Event
+
+  """
+  Cut the event to the top 8. If this is a draft-type event, this will set the event
+  status to DRAFTING and initialize the `top8Pods` and the three top 8-related
+  timer fields. If this is a sealed event, this will set the event status to
+  DECKCONSTRUCTION. For constructed events, this will do nothing (but will do no harm).
+  """
+  cutToTop8(id: ID!): GameState
+
+  """
+  Create the next round of an event, which might be the first round if none have yet been
+  created. Returns a GameState.
+  """
+  createNextRound(id: ID!, timerID: ID): GameState
+
+  """
+  Add a round to the event. This increments the events minimum rounds by 1
+  """
+  addRound(id: ID!): GameState
+
+  """
+  Add a timer to the GameState, will override any previously set. The timer id is the UUID of the timer.
+  """
+  addTimer(input: SetRoundTimerInput!): GameState
+
+  """
+  Start the draft timer. Only valid for a draft-type event (e.g., `WOTC_DRAFT`).
+  """
+  startDraftTimer(id: ID!): GameState
+
+  """
+  Start the deck construction timer. Only valid for a sealed event (e.g., `SEALED_DECK`).
+  """
+  startDeckConstructionTimer(id: ID!): GameState
+
+  """
+  Start the round timer.
+  """
+  startRoundTimer(id: ID!): GameState
+
+  """
+  Record the result of a single match in a round. The result is assumed to be final; that is,
+  the client should not send game results one at a time as the games are finished, but
+  instead wait until the match has concluded and send a match score. Returns the current
+  GameState.
+  """
+  recordMatchResult(input: MatchResultInput!): GameState
+
+  """
+  Drop a team from the current round. The team will not be paired in the next round, and
+  any unplayed games will be credited to their opponent (assuming the opponent has not also
+  dropped).
+  """
+  dropTeam(eventId: ID!, teamId: ID!): GameState
+
+  """
+  Cancel a drop and return the team to the event. This is not the same as a Late Add, and it
+  should only be used before the round result is certified.
+  """
+  undropTeam(eventId: ID!, teamId: ID!): GameState
+
+  """
+  Certify the results of a round. This mutation asks you to send all of the match results for
+  the round, even the ones that you previously sent using `recordMatchResult`, and guarantees
+  that the results you send will be stored and locked to prevent future changes. You **must** call
+  this mutation before you will be allowed to create the next round. Returns the current GameState.
+  """
+  certifyRound(input: [MatchResultInput!]!): CertifyRoundPayload
+
+  """
+  Removes the active round and all match results for that round and moves the Event back to the previous round.
+  """
+  removeRound(id: ID!): GameState
+
+  """
+  Sets the PodPairingType that will determine the PairingStrategy to be used for a Swiss Draft event
+  """
+  setPodPairingType(eventId: ID!, podPairingType: PodPairingType!): GameState
+
+  """
+  Move a player from the interested list (a reservation) to the registered list (a registration).
+  Reservations always have a valid persona ID. The same player will never appear in both lists;
+  this mutation converts a reservation to a registration.
+  """
+  registerInterestedPlayer(eventId: ID!, personaId: ID!): Event
+
+  """
+  Moves the selected players from the companion lobby to be registered into the event.
+  """
+  expeditePlayersRegistration(
+    eventId: ID!
+    input: [PlayerRegistrationInput]!
+  ): Event
+
+  """
+  Moves the selected players from the companion lobby to be registered into the event after the event has been started.
+  Because this is after an event has already started the players will also be added to the event in Gamekeeper
+  """
+  lateRegisterCompanionPlayer(
+    eventId: ID!
+    input: [PlayerRegistrationInput]!
+  ): Event
+
+  """
+  Remove a player from the registered list. If the player was previously on the interested list,
+  they will return to it. `id` is the ID of the Registration.
+
+  TODO: remove requirement to pass `eventId`
+  """
+  removeRegisteredPlayer(eventId: ID!, id: ID!): Event
+
+  """
+  Register a new guest (anonymous) player for the event.
+  """
+  registerGuestPlayer(
+    eventId: ID!
+    firstName: String!
+    lastName: String!
+  ): Event
+
+  """
+  Register a new player for the event, using their email address. We will look up the email in the
+  platform API to try to match it to a known Wizards account. If we find a match, the new registration
+  will have status FOUND; otherwise this mutation will return an error.
+  """
+  registerPlayerByEmail(eventId: ID!, emailAddress: String!): Event
+
+  """
+  Register a player for an event after registration has concluded, using their email address.
+  Like initial registration, we will look up the email in the platform API to try to match it
+  to a known Wizards account, and return an error if we don't find one. If this lookup is
+  successful, the player will be added to the event and given a match loss in each round that
+  was paired before the player was added. Players may not be registered late for Draft events
+  or for Single Elimination events, nor may they be added late once a cut to playoffs has been
+  made; in each case an error will be returned.
+  """
+  lateRegisterPlayerByEmail(eventId: ID!, emailAddress: String!): Event
+
+  """
+  Register a guest player for an event after registration has concluded. The player will be
+  added to the event and given a match loss in each round that was paired before the player
+  was added. Players may not be registered late for Draft events or for Single Elimination
+  events, nor may they be added late once a cut to playoffs has been made; in each case an
+  error will be returned.
+  """
+  lateRegisterGuestPlayer(
+    eventId: ID!
+    firstName: String!
+    lastName: String!
+  ): Event
+
+  """
+  Supply a first and last name for a registered player in the context of a specific event.
+  This name information is stored temporarily and will be deleted within 7 days of the end
+  of the event. It does _not_ replace the name information in the Platform system (if any),
+  and it is not shared between events.
+  """
+  setRegisteredPlayerName(input: SetRegisteredPlayerNameInput!): Registration
+
+  """
+  Set the preferred table number to seat a player who needs some kind of accomodation.
+  """
+  setPreferredTableNumber(
+    input: SetPreferredTableNumberInput!
+  ): RegistrationPayload
+
+  """
+  Clear the preferred table number for a player
+  """
+  clearPreferredTableNumber(
+    input: ClearPreferredTableNumberInput!
+  ): RegistrationPayload
+
+  """
+  Mark the Terms & Conditions as being accepted by an organization
+  """
+  acceptTermsAndConditions(input: AcceptTermsAndConditionsInput!): Organization
+
+  """
+  Add a group to the organization
+  """
+  addGroup(input: GroupInput!): [String!]!
+
+  """
+  Remove a group from the organization
+  """
+  removeGroup(input: GroupInput!): [String!]!
+
+  """
+  Grant a specific role to a user in the scope of an organization. Returns the role that was granted.
+  """
+  grantRole(input: RoleInput!): Role
+
+  """
+  Revoke a specific role from a user in the scope of an organization. Returns `true` if the revocation succeeded.
+  """
+  revokeRole(input: RoleInput!): Boolean
+
+  """
+  Change a user's role in the scope of an organization. Returns the new role.
+  """
+  changeRole(input: ChangeRoleInput!): Role
+
+  """
+  Grant admin-level rights to a user, for all organizations.
+  """
+  grantAdmin(id: ID!): User
+
+  """
+  Revoke admin-level rights from a user.
+  """
+  revokeAdmin(id: ID!): User
+
+  """
+  Create a new venue in the scope of an organization.
+  """
+  createVenue(input: CreateVenueInput!): Venue
+
+  """
+  Approves a venue, replacing all field values. Any fields not supplied will be reset to null or 0.
+  """
+  approveVenue(input: ApproveVenueInput!): Venue
+
+  """
+
+  """
+  sendSMS(input: sendSMSInput!): SendSMSStatus!
+
+  """
+
+  """
+  broadcastSMS(input: broadcastSMSInput!): Boolean
+
+  """
+  Grant Twilio admin-level rights to a user
+  """
+  grantTwilioAdmin(id: ID!): String!
+
+  """
+  Revoke Twilio  admin-level rights from a user.
+  """
+  revokeTwilioAdmin(id: ID!): String!
+
+  """
+  creates a timer
+  """
+  createTimer(input: CreateTimerInput!): Timer!
+
+  """
+  changes an existing timer
+  """
+  setTimer(input: SetTimerInput!): Timer
+
+  """
+  delete a timer when you're done with it
+  """
+  deleteTimer(id: ID!): Timer
+
+  """
+  create a new deck.
+  """
+  createDeck(input: CreateDeckInput!): CreateDeckPayload
+
+  """
+  update an existing deck.
+  """
+  updateDeck(input: UpdateDeckInput!): UpdateDeckPayload
+
+  """
+  delete an existing  deck by deck ID.
+  """
+  deleteDeck(id: ID!): DeleteDeckPayload
+}
+
+"""
+The input type to be used when creating an event.
+"""
+input CreateEventInput {
+  """
+  The ID of the organization that owns this event. Required.
+  """
+  organizationId: ID!
+
+  """
+  The title of the event. Required.
+  """
+  title: String!
+
+  """
+  The ID of the EventFormat for the event. Required.
+  """
+  eventFormatId: ID!
+
+  """
+  If this event has a Limited format (such as Draft or Sealed), the ID of the CardSet that will be in use.
+  """
+  cardSetId: ID
+
+  """
+  The Rules Enforcement Level for the event. Required.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event. Required.
+  """
+  pairingType: PairingType!
+
+  """
+  The cost of the event, in minor currency units (e.g., cents). Defaults to 0.
+  """
+  entryFeeAmount: Int
+
+  """
+  The currency of the entry fee. Defaults to USD.
+  """
+  entryFeeCurrency: String
+
+  """
+  The ID of the venue for the event. Must belong to the same organization as the event. If `null`,
+  the event is understood to be occurring at the store's location.
+  """
+  venueId: ID
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  A description of the event. Should not contain HTML.
+  """
+  description: String
+
+  """
+  The time that the event is scheduled to start, in ISO format.
+  """
+  scheduledStartTime: String
+
+  """
+  The time that the event is estimated to end, in ISO format.
+  """
+  estimatedEndTime: String
+
+  """
+  The latitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Must not include HTML; use line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held. Required.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will be created with a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplateId: ID
+}
+
+"""
+The input type to be used when updating an event.
+"""
+input UpdateEventInput {
+  """
+  The ID of the event. Required.
+  """
+  id: ID!
+
+  """
+  The ID of the organization that owns this event. Required.
+  """
+  organizationId: ID!
+
+  """
+  The title of the event. Required.
+  """
+  title: String!
+
+  """
+  The ID of the EventFormat for the event. Required.
+  """
+  eventFormatId: ID!
+
+  """
+  If this event has a Limited format (such as Draft or Sealed), the ID of the CardSet that will be in use.
+  """
+  cardSetId: ID
+
+  """
+  The Rules Enforcement Level for the event. Required.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event. Required.
+  """
+  pairingType: PairingType!
+
+  """
+  The cost of the event, in minor currency units (e.g., cents). Defaults to 0.
+  """
+  entryFeeAmount: Int
+
+  """
+  The currency of the entry fee. Defaults to USD.
+  """
+  entryFeeCurrency: String
+
+  """
+  The ID of the venue for the event. Must belong to the same organization as the event. If `null`,
+  the event is understood to be occurring at the store's location.
+  """
+  venueId: ID
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  A description of the event. Should not contain HTML.
+  """
+  description: String
+
+  """
+  The time that the event is scheduled to start, in ISO format.
+  """
+  scheduledStartTime: String
+
+  """
+  The time that the event is estimated to end, in ISO format.
+  """
+  estimatedEndTime: String
+
+  """
+  The latitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Must not include HTML; use line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held. Required.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will be created with a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplateId: ID
+}
+
+"""
+
+"""
+input BatchCreateEventsInput {
+  """
+  A list of single events to create with the batch
+  """
+  singleEvents: [CreateEventInput!]!
+
+  """
+  A list of recurring events to create with the batch
+  """
+  recurringEvents: [CreateRecurringEventInput!]!
+}
+
+"""
+The input type to be used when creating multiple recurring events.
+"""
+input CreateRecurringEventInput {
+  """
+  The ID of the organization that owns this event. Required.
+  """
+  organizationId: ID!
+
+  """
+  The title of the event. Required.
+  """
+  title: String!
+
+  """
+  The ID of the EventFormat for the event. Required.
+  """
+  eventFormatId: ID!
+
+  """
+  If this event has a Limited format (such as Draft or Sealed), the ID of the CardSet that will be in use.
+  """
+  cardSetId: ID
+
+  """
+  The Rules Enforcement Level for the event. Required.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event. Required.
+  """
+  pairingType: PairingType!
+
+  """
+  The cost of the event, in minor currency units (e.g., cents). Defaults to 0.
+  """
+  entryFeeAmount: Int
+
+  """
+  The currency of the entry fee. Defaults to USD.
+  """
+  entryFeeCurrency: String
+
+  """
+  The ID of the venue for the event. Must belong to the same organization as the event. If `null`,
+  the event is understood to be occurring at the store's location.
+  """
+  venueId: ID
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  A description of the event. Should not contain HTML.
+  """
+  description: String
+
+  """
+  The time that the event is scheduled to start, in ISO format.
+  """
+  scheduledStartTime: String
+
+  """
+  The time that the event is estimated to end, in ISO format.
+  """
+  estimatedEndTime: String
+
+  """
+  The latitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Must not include HTML; use line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held. Required.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will be created with a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplateId: ID
+
+  """
+  The frequency at which to create a group of recurring events
+  """
+  frequency: RecurrenceFrequency!
+
+  """
+  The date that the recurrence should stop trying to create events at, in ISO format.
+  """
+  repeatUntil: String!
+
+  """
+  Day of the week mask, used only for creating recurring events when the frequency is WEEKLY
+  """
+  dotWMask: Int
+
+  """
+  Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
+  """
+  isDotWBound: Boolean
+}
+
+"""
+
+"""
+type BatchCreateResponse {
+  """
+  A list of the single events that were created with the batch
+  """
+  singleEvents: [Event!]!
+
+  """
+  A list of the recurring events that were created with the batch
+  """
+  recurringEvents: [RecurringEventResponse!]!
+
+  """
+  A list of the errors that occurred while batch creating all of the events
+  """
+  errors: [String!]!
+}
+
+"""
+A list of events that when using Recurring Event Creation
+"""
+type RecurringEventResponse {
+  """
+  The events themselves that have been created.
+  """
+  recurringEvents: [Event!]!
+
+  """
+  If the maximum amount of events that can be created at one time was hit.
+  """
+  eventMaxCountHit: Boolean!
+
+  """
+  If the maximum date range allowed was hit.
+  """
+  eventMaxDateHit: Boolean!
+}
+
+"""
+The input type to be used when updated a series of recurring events.
+"""
+input UpdateRecurringEventInput {
+  """
+  The ID of the base event that the series is edited from. Required.
+  """
+  baseEventId: ID!
+
+  """
+  The ID of the organization that owns this event. Required.
+  """
+  organizationId: ID!
+
+  """
+  The ID of the group to update recurring events from. Required.
+  """
+  groupId: ID!
+
+  """
+  The title of the event. Required.
+  """
+  title: String!
+
+  """
+  The ID of the EventFormat for the event. Required.
+  """
+  eventFormatId: ID!
+
+  """
+  If this event has a Limited format (such as Draft or Sealed), the ID of the CardSet that will be in use.
+  """
+  cardSetId: ID
+
+  """
+  The Rules Enforcement Level for the event. Required.
+  """
+  rulesEnforcementLevel: RulesEnforcementLevel!
+
+  """
+  The pairing method for the event. Required.
+  """
+  pairingType: PairingType!
+
+  """
+  The cost of the event, in minor currency units (e.g., cents). Defaults to 0.
+  """
+  entryFeeAmount: Int
+
+  """
+  The currency of the entry fee. Defaults to USD.
+  """
+  entryFeeCurrency: String
+
+  """
+  The ID of the venue for the event. Must belong to the same organization as the event. If `null`,
+  the event is understood to be occurring at the store's location.
+  """
+  venueId: ID
+
+  """
+  The maximum number of players this event supports.
+  """
+  capacity: Int
+
+  """
+  A description of the event. Should not contain HTML.
+  """
+  description: String
+
+  """
+  The time that the event is scheduled to start, in ISO format.
+  """
+  scheduledStartTime: String
+
+  """
+  The time that the event is estimated to end, in ISO format.
+  """
+  estimatedEndTime: String
+
+  """
+  The latitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Required.
+  """
+  longitude: Float!
+
+  """
+  The street address of the event's location. This should be sourced from either the
+  venue, if present, or the organization. Must not include HTML; use line breaks for
+  formatting.
+  """
+  address: String
+
+  """
+  The time zone where the event is being held. Required.
+  """
+  timeZone: String!
+
+  """
+  The phone number players can call for more information about the event.
+  """
+  phoneNumber: String
+
+  """
+  The email address players can use for more information about the event.
+  """
+  emailAddress: String
+
+  """
+  The table number we should start at when assigning matches to tables. Will
+  default to 1.
+  """
+  startingTableNumber: Int
+
+  """
+  If this event will be created with a top 8
+  """
+  hasTop8: Boolean
+
+  """
+  Whether this is an ad-hoc event.
+  """
+  isAdHoc: Boolean
+
+  """
+  Whether this event is marked as an event that was run online.
+  """
+  isOnline: Boolean
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplateId: ID
+
+  """
+  The frequency at which to create a group of recurring events
+  """
+  frequency: RecurrenceFrequency!
+
+  """
+  The date that the recurrence should stop trying to create events at, in ISO format.
+  """
+  repeatUntil: String!
+
+  """
+  Day of the week mask, used only for creating recurring events when the frequency is WEEKLY
+  """
+  dotWMask: Int
+
+  """
+  Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
+  """
+  isDotWBound: Boolean
+}
+
+"""
+The input type to be used when deleting a series of recurring events.
+"""
+input DeleteRecurringEventInput {
+  """
+  The ID of the organization that owns this event. Required.
+  """
+  organizationId: ID!
+
+  """
+  The ID of the group to delete recurring events from. Required.
+  """
+  groupId: ID!
+
+  """
+  The date after which to delete events from the series.
+  """
+  deleteAfter: DateTime
+}
+
+"""
+
+"""
+input CreateIncidentInput {
+  """
+  The ID of the event during which the incident occurred.
+  """
+  eventId: ID!
+
+  """
+  The persona ID of the offender.
+  """
+  offenderId: ID!
+
+  """
+  The persona ID of the reporter.
+  """
+  reporterId: ID!
+
+  """
+  The ID of the infraction that occurred.
+  """
+  infractionId: ID!
+
+  """
+  The name of the infraction that was assessed.
+  """
+  infractionName: String!
+
+  """
+  The name of the infraction category that was assessed.
+  """
+  infractionCategoryName: String!
+
+  """
+  The ID of the infraction category that occurred.
+  """
+  infractionCategoryId: ID!
+
+  """
+  The ID of the penalty that was assessed.
+  """
+  penaltyId: ID!
+
+  """
+  The name of the penalty that was assessed.
+  """
+  penaltyName: String!
+
+  """
+  The round number during which the incident occurred.
+  """
+  roundNumber: Int!
+
+  """
+  The reporter's comments about this incident.
+  """
+  comment: String
+
+  """
+  The time at which the incident was reported.
+  """
+  reportedAt: DateTime!
+}
+
+"""
+
+"""
+input UpdateIncidentInput {
+  """
+  The ID of the incident to update.
+  """
+  id: ID!
+
+  """
+  The persona ID of the offender.
+  """
+  offenderId: ID!
+
+  """
+  The persona ID of the reporter.
+  """
+  reporterId: ID!
+
+  """
+  The ID of the event during which the incident occurred.
+  """
+  eventId: ID!
+
+  """
+  The ID of the infraction that occurred.
+  """
+  infractionId: ID!
+
+  """
+  The ID of the infraction category that occurred.
+  """
+  infractionCategoryId: ID
+
+  """
+  The name of the infraction that was assessed.
+  """
+  infractionName: String!
+
+  """
+  The name of the infraction category that was assessed.
+  """
+  infractionCategoryName: String!
+
+  """
+  The ID of the penalty that was assessed.
+  """
+  penaltyId: ID!
+
+  """
+  The name of the penalty that was assessed.
+  """
+  penaltyName: String!
+
+  """
+  The round number during which the incident occurred.
+  """
+  roundNumber: Int!
+
+  """
+  The reporter's comments about this incident.
+  """
+  comment: String
+}
+
+"""
+
+"""
+input DeleteIncidentInput {
+  """
+  The ID of the incident to update.
+  """
+  id: ID!
+
+  """
+  The ID of the event during which the incident occurred.
+  """
+  eventId: ID!
+}
+
+"""
+
+"""
+input FeedbackInput {
+  """
+  Content of the feedback message.
+  """
+  feedback: String!
+
+  """
+  The person who gave the feedback.
+  """
+  reporterId: ID!
+
+  """
+  The organization tied to the feedback.
+  """
+  orgId: ID!
+
+  """
+  The reccomendation rating tied to the feedback.
+  """
+  recommendationLevel: Int
+}
+
+"""
+
+"""
+type Feedback {
+  """
+  Content of the feedback message.
+  """
+  feedback: String!
+
+  """
+  The person who gave the feedback.
+  """
+  reporterId: ID!
+
+  """
+  The organization tied to the feedback.
+  """
+  orgId: ID!
+
+  """
+  The reccomendation rating tied to the feedback.
+  """
+  recommendationLevel: Int
+}
+
+"""
+
+"""
+input StartEventInput {
+  """
+  The ID of the event.
+  """
+  id: ID!
+
+  """
+  The ID of the draft Timer ID.
+  """
+  draftTimerID: ID
+
+  """
+  The ID of the construction Draft Timer ID
+  """
+  constructDraftTimerID: ID
+
+  """
+  The ID of the Cut to top8 Draft Timer ID
+  """
+  top8DraftTimerID: ID
+}
+
+"""
+
+"""
+input SetRoundTimerInput {
+  """
+  The id of the event that contains the round we will be updating.
+  """
+  eventId: ID!
+
+  """
+  The round to set this timer id on.
+  """
+  roundNumber: Int!
+
+  """
+  The id of the timer that we will be setting on for the round given.
+  """
+  timerId: ID!
+}
+
+"""
+
+"""
+input MatchResultInput {
+  """
+  The ID of the event.
+  """
+  eventId: ID!
+
+  """
+  The ID of the match.
+  """
+  matchId: ID!
+
+  """
+  The ID of the left team.
+  """
+  leftTeamId: ID!
+
+  """
+  The ID of the right team, if this is not a bye.
+  """
+  rightTeamId: ID
+
+  """
+  Was this match a bye? If so, the left (first) team is considered to have won 2-0.
+  """
+  isBye: Boolean
+
+  """
+  The number of wins that the left (first) team achieved. Ignored if `isBye` is true.
+  """
+  leftTeamWins: Int
+
+  """
+  The number of wins that the right (second) team achieved. Ignored if `isBye` is true.
+  """
+  rightTeamWins: Int
+
+  """
+  draw holds game-level draws in matches between 0-9
+  """
+  draws: Int
+}
+
+"""
+
+"""
+type CertifyRoundPayload {
+  """
+
+  """
+  event: Event
+
+  """
+
+  """
+  gameState: GameState
+}
+
+"""
+List of players to be registered
+"""
+input PlayerRegistrationInput {
+  """
+  The ID of the registration.
+  """
+  registrationId: ID
+
+  """
+  The persona ID of the player.
+  """
+  personaId: ID!
+
+  """
+  The registered email address of the player.
+  """
+  emailAddress: String!
+
+  """
+  The player's first name.
+  """
+  firstName: String
+
+  """
+  The player's last name.
+  """
+  lastName: String
+
+  """
+  The player's display name.
+  """
+  displayName: String
+}
+
+"""
+
+"""
+input SetRegisteredPlayerNameInput {
+  """
+  The ID of the registration.
+  """
+  id: ID!
+
+  """
+  The ID of the event that the registration belongs to.
+  """
+  eventId: ID!
+
+  """
+  The new first name for the player, if any.
+  """
+  firstName: String
+
+  """
+  The new last name for the player, if any.
+  """
+  lastName: String
+}
+
+"""
+
+"""
+input SetPreferredTableNumberInput {
+  """
+  The ID of the registration.
+  """
+  id: ID!
+
+  """
+  The ID of the event that the registration belongs to.
+  """
+  eventId: ID!
+
+  """
+  The table number to set for the player
+  """
+  tableNumber: Int!
+}
+
+"""
+
+"""
+type RegistrationPayload {
+  """
+  The registration impacted by the mutation.
+  """
+  registration: Registration!
+}
+
+"""
+
+"""
+input ClearPreferredTableNumberInput {
+  """
+  The ID of the registration.
+  """
+  id: ID!
+
+  """
+  The ID of the event that the registration belongs to.
+  """
+  eventId: ID!
+}
+
+"""
+
+"""
+input AcceptTermsAndConditionsInput {
+  """
+  The ID of the organization doing the accepting
+  """
+  id: ID!
+
+  """
+  When the Ts&Cs were accepted
+  """
+  acceptedAt: DateTime!
+}
+
+"""
+
+"""
+input GroupInput {
+  """
+  The ID of the organization doing the adding or removing of groups
+  """
+  id: ID!
+
+  """
+  The group that we will be adding or removing
+  """
+  group: String!
+}
+
+"""
+The input type for role mutations that are scoped to an organization.
+"""
+input RoleInput {
+  """
+
+  """
+  personaId: ID!
+
+  """
+
+  """
+  organizationId: ID!
+
+  """
+
+  """
+  roleName: RoleName!
+}
+
+"""
+The input type for changing a user's role within the scope of an organization.
+"""
+input ChangeRoleInput {
+  """
+
+  """
+  personaId: ID!
+
+  """
+
+  """
+  organizationId: ID!
+
+  """
+
+  """
+  to: RoleName!
+}
+
+"""
+The input type for creating a venue.
+"""
+input CreateVenueInput {
+  """
+  The ID of the organization creating this venue. Required.
+  """
+  organizationId: ID!
+
+  """
+  The name of the venue. Should be unique in the scope of an organization. Required.
+  """
+  name: String!
+
+  """
+  The latitude of the venue's physical location.
+  """
+  latitude: Float
+
+  """
+  The longitude of the venue's physical location.
+  """
+  longitude: Float
+
+  """
+  The physical address of the venue.
+  """
+  address: String
+
+  """
+  The street address, part of the full physical address
+  """
+  streetAddress: String
+
+  """
+  City, part of the full physical address
+  """
+  city: String
+
+  """
+  State/Territory, part of the full physical address
+  """
+  state: String
+
+  """
+  Country, part of the full physical address
+  """
+  country: String
+
+  """
+  Postal Code, part of the full physical address
+  """
+  postalCode: String
+
+  """
+  The time zone of the venue. Must be a valid IANA time zone identifier, e.g. 'America/Los_Angeles'.
+  """
+  timeZone: String
+
+  """
+  The phone number of the venue.
+  """
+  phoneNumber: String
+
+  """
+  The email address of the venue.
+  """
+  emailAddress: String
+
+  """
+  The Google Place ID of the venue.
+  """
+  googlePlaceId: String
+
+  """
+  The maximum capacity of the venue.
+  """
+  capacity: Int
+
+  """
+  Any additional notes about the venue.
+  """
+  notes: String
+}
+
+"""
+
+"""
+input ApproveVenueInput {
+  """
+  The ID of the venue. Required.
+  """
+  id: ID!
+
+  """
+  The name of the venue. Should be unique in the scope of an organization. Required.
+  """
+  name: String!
+
+  """
+  The latitude of the venue's physical location. Required.
+  """
+  latitude: Float!
+
+  """
+  The longitude of the venue's physical location. Required.
+  """
+  longitude: Float!
+
+  """
+  The physical address of the venue. Required.
+  """
+  address: String!
+
+  """
+  The street address, part of the full physical address
+  """
+  streetAddress: String
+
+  """
+  City, part of the full physical address
+  """
+  city: String
+
+  """
+  State/Territory, part of the full physical address
+  """
+  state: String
+
+  """
+  Country, part of the full physical address
+  """
+  country: String
+
+  """
+  Postal Code, part of the full physical address
+  """
+  postalCode: String
+
+  """
+  The time zone of the venue. Must be a valid IANA time zone identifier, e.g. 'America/Los_Angeles'. Required.
+  """
+  timeZone: String!
+
+  """
+  The phone number of the venue.
+  """
+  phoneNumber: String
+
+  """
+  The email address of the venue.
+  """
+  emailAddress: String
+
+  """
+  The Google Place ID of the venue.
+  """
+  googlePlaceId: String
+
+  """
+  The maximum capacity of the venue.
+  """
+  capacity: Int
+
+  """
+  Any additional notes about the venue.
+  """
+  notes: String
+}
+
+"""
+
+"""
+input sendSMSInput {
+  """
+
+  """
+  mobileNumbers: [MobileNumberInput]!
+
+  """
+
+  """
+  message: String!
+}
+
+"""
+
+"""
+input MobileNumberInput {
+  """
+
+  """
+  mobileNumber: String!
+}
+
+"""
+The Response type received from Twillio Service
+"""
+type SendSMSStatus {
+  """
+  SMS status response
+  """
+  resp: [Resp!]!
+
+  """
+  Success count
+  """
+  successCount: Int!
+
+  """
+  Failure Count
+  """
+  failureCount: Int!
+}
+
+"""
+
+"""
+type Resp {
+  """
+  Subscriber Number
+  """
+  mobileNumber: String!
+
+  """
+  Message Delivered Status
+  """
+  isDelivered: Boolean
+
+  """
+  Delivery Response
+  """
+  deliveryStatus: String!
+}
+
+"""
+
+"""
+input broadcastSMSInput {
+  """
+
+  """
+  broadcastMessage: String!
+}
+
+"""
+The input type for creating a Timer.
+"""
+input CreateTimerInput {
+  """
+  The number of milliseconds to count down from.
+  """
+  durationMs: Int!
+
+  """
+  The state the timer should start in.
+  """
+  state: TimerState!
+}
+
+"""
+The input type for resetting a Timer.
+"""
+input SetTimerInput {
+  """
+  The ID of the timer to reset.
+  """
+  id: ID!
+
+  """
+  The number of milliseconds to count down from.
+  """
+  durationMs: Int!
+
+  """
+  The state the timer should start in.
+  """
+  state: TimerState!
+}
+
+"""
+Input type to create deck.
+"""
+input CreateDeckInput {
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  isPrivate: Boolean!
+
+  """
+
+  """
+  cardQuantities: [CardQuantityInput!]!
+}
+
+"""
+Input type for card and quantity of it.
+"""
+input CardQuantityInput {
+  """
+
+  """
+  cardId: ID!
+
+  """
+
+  """
+  quantity: Int!
+
+  """
+
+  """
+  deckSection: DeckSection!
+}
+
+"""
+CreateDeckPayload is the response type returned if Deck creation successeed.
+"""
+type CreateDeckPayload {
+  """
+
+  """
+  deck: Deck
+}
+
+"""
+Input type to update deck.
+"""
+input UpdateDeckInput {
+  """
+
+  """
+  Id: ID!
+
+  """
+
+  """
+  name: String!
+
+  """
+
+  """
+  isPrivate: Boolean!
+
+  """
+
+  """
+  cardQuantities: [CardQuantityInput!]
+}
+
+"""
+UpdateDeckPayload is the response type returned if Deck updation successeed.
+"""
+type UpdateDeckPayload {
+  """
+
+  """
+  deck: Deck
+}
+
+"""
+The payload type for the deleteDeck mutation.
+"""
+type DeleteDeckPayload {
+  """
+  Whether the deletion was successful.
+  """
+  success: Boolean
+}
+
+type Subscription {
+  """
+
+  """
+  eventCreated(organizationId: ID!): Event!
+
+  """
+
+  """
+  eventUpdated(organizationId: ID!): Event!
+
+  """
+  When an event has been started
+  """
+  eventStarted(organizationId: ID!): EventStartedPayload!
+
+  """
+  When a result has been reported for an event
+  """
+  gameResultReported(eventId: ID!): GamekeeperNotificationPayload!
+
+  """
+  When a round has been certified for an event
+  """
+  gameRoundCertified(eventId: ID!): GamekeeperNotificationPayload!
+
+  """
+  When a new round is created for an event
+  """
+  gameRoundCreated(eventId: ID!): GamekeeperNotificationPayload!
+
+  """
+  Listen to a specific events updates
+  """
+  runningEventUpdated(eventId: ID!): Event!
+
+  """
+
+  """
+  playerRegistered(eventId: ID!): PlayerRegisteredPayload!
+
+  """
+
+  """
+  teamDropped(eventId: ID!): PlayerDroppedPayload!
+
+  """
+
+  """
+  registrationUpdated(eventId: ID!): RegistrationUpdatedPayload!
+
+  """
+
+  """
+  eventReserved(eventId: ID!): ReservationNotificationPayload!
+
+  """
+
+  """
+  eventReservationCancelled(eventId: ID!): ReservationNotificationPayload!
+
+  """
+  A user has been given a new role (scorekeeper, store owner, or store admin)
+  """
+  roleGranted: RoleChangedPayload!
+
+  """
+  A user has lost a role (scorekeeper, store owner, or store admin)
+  """
+  roleRevoked: RoleChangedPayload!
+
+  """
+  A user has been granted WPN Admin status
+  """
+  adminRoleGranted: AdminRoleChangedPayload!
+
+  """
+  A user has lost WPN Admin status
+  """
+  adminRoleRevoked: AdminRoleChangedPayload!
+
+  """
+
+  """
+  venueCreated(organizationId: ID!): VenueUpdatePayload!
+
+  """
+
+  """
+  venueUpdated(organizationId: ID!): VenueUpdatePayload!
+
+  """
+
+  """
+  venueRoleGranted(organizationId: ID!): RoleChangedPayload!
+
+  """
+
+  """
+  venueRoleRevoked(organizationId: ID!): RoleChangedPayload!
+
+  """
+
+  """
+  timerUpdated(id: ID!): Timer!
+}
+
+"""
+
+"""
+type EventStartedPayload {
+  """
+  The id of the event that was created
+  """
+  eventId: ID!
+
+  """
+  The organization id that this event was created under
+  """
+  organizationId: ID
+
+  """
+  The round that this event was started with.
+  """
+  roundNumber: Int
+
+  """
+  The minimum number of rounds required to reach a winner.
+  """
+  minRounds: Int
+
+  """
+  The number of games until a win.
+  """
+  gamesToWin: Int
+
+  """
+  The format that this event was started with.
+  """
+  format: EventFormat
+
+  """
+  The pairing method for the event.
+  """
+  pairingType: PairingType
+
+  """
+  Is this event a private one
+  """
+  isPrivateEvent: Boolean
+
+  """
+  The user who created the event
+  """
+  eventCreator: User
+
+  """
+  The user who started the event
+  """
+  sender: User
+}
+
+"""
+
+"""
+type GamekeeperNotificationPayload {
+  """
+  The id of the event that was created
+  """
+  eventId: ID!
+
+  """
+  The id of the organization for the event
+  """
+  organizationId: ID!
+
+  """
+  Is this event a private one
+  """
+  isPrivateEvent: Boolean
+
+  """
+  The user who created the event
+  """
+  eventCreator: User
+
+  """
+  The user who updated the game result
+  """
+  sender: User
+
+  """
+
+  """
+  activePlayers: [User]!
+}
+
+"""
+
+"""
+type PlayerRegisteredPayload {
+  """
+  The ID of the event the player was added.
+  """
+  eventId: ID!
+
+  """
+  The player that was added.
+  """
+  addedPlayer: Registration!
+
+  """
+  The user who created the event.
+  """
+  eventCreator: User
+
+  """
+  The user who added the player.
+  """
+  sender: User
+
+  """
+  If the event is a private one.
+  """
+  isPrivateEvent: Boolean
+}
+
+"""
+
+"""
+type PlayerDroppedPayload {
+  """
+  The ID of the event the player was dropped.
+  """
+  eventId: ID!
+
+  """
+  The player that was dropped.
+  """
+  droppedPlayer: User!
+
+  """
+  The user who created the event.
+  """
+  eventCreator: User
+
+  """
+  The user who dropped the player.
+  """
+  sender: User
+
+  """
+  If the event is a private one.
+  """
+  isPrivateEvent: Boolean
+
+  """
+  If the player that was dropped came from a reservation
+  """
+  isReservation: Boolean
+}
+
+"""
+
+"""
+type RegistrationUpdatedPayload {
+  """
+  The ID of the event.
+  """
+  eventId: ID!
+
+  """
+  The ID of the registration.
+  """
+  registrationId: ID!
+
+  """
+  The persona ID of the registrant.
+  """
+  personaId: ID!
+
+  """
+  The registrant's first name.
+  """
+  firstName: String
+
+  """
+  The registrant's last name.
+  """
+  lastName: String
+
+  """
+  The registrant's display name.
+  """
+  displayName: String
+
+  """
+  Whether this registrant is a guest or has a Wizards account.
+  """
+  status: PlatformStatus
+
+  """
+  The registrant's preferred table number, if any.
+  """
+  preferredTableNumber: Int
+}
+
+"""
+
+"""
+type ReservationNotificationPayload {
+  """
+  The ID of the event.
+  """
+  eventId: ID!
+
+  """
+  The ID of the reservation.
+  """
+  reservationId: ID!
+
+  """
+  The persona ID of the reservation.
+  """
+  personaId: ID!
+
+  """
+  The reservations display name.
+  """
+  displayName: String
+
+  """
+  The reservation's first name.
+  """
+  firstName: String
+
+  """
+  The reservation's last name.
+  """
+  lastName: String
+
+  """
+  The reservation's email address.
+  """
+  emailAddress: String
+}
+
+"""
+
+"""
+type RoleChangedPayload {
+  """
+  The player whose role has been changed
+  """
+  personaId: ID!
+
+  """
+  The name of the role that was changed
+  """
+  roleName: String!
+
+  """
+  The organization under which this role change occurred.
+  """
+  organizationId: ID!
+
+  """
+  The players display name whose role has been changed
+  """
+  displayName: String
+
+  """
+  The players first name whose role has been changed
+  """
+  firstName: String
+
+  """
+  The players last name whose role has been changed
+  """
+  lastName: String
+}
+
+"""
+
+"""
+type AdminRoleChangedPayload {
+  """
+  The player whose role has been changed
+  """
+  personaId: ID!
+
+  """
+  The name of the role that was changed
+  """
+  roleName: String!
+
+  """
+  The players display name whose role has been changed
+  """
+  displayName: String
+
+  """
+  The players first name whose role has been changed
+  """
+  firstName: String
+
+  """
+  The players last name whose role has been changed
+  """
+  lastName: String
+}
+
+"""
+
+"""
+type VenueUpdatePayload {
+  """
+
+  """
+  id: ID!
+
+  """
+  The name of the venue.
+  """
+  name: String!
+
+  """
+  The latitude of the venue.
+  """
+  latitude: Float
+
+  """
+  The longitude of the venue.
+  """
+  longitude: Float
+
+  """
+  The physical address of the venue, formatted as plain text (with newlines).
+  """
+  address: String
+
+  """
+
+  """
+  streetAddress: String
+
+  """
+
+  """
+  city: String
+
+  """
+
+  """
+  state: String
+
+  """
+
+  """
+  country: String
+
+  """
+
+  """
+  postalCode: String
+
+  """
+  The time zone of the venue, taken from https://www.iana.org/time-zones
+  """
+  timeZone: String
+
+  """
+  The phone number of the venue.
+  """
+  phoneNumber: String
+
+  """
+  The email address of the venue.
+  """
+  emailAddress: String
+
+  """
+  The Google Place ID of the venue.
+  """
+  googlePlaceId: String
+
+  """
+  The maximum capacity of the venue.
+  """
+  capacity: Int
+
+  """
+  Any additional notes about the venue.
+  """
+  notes: String
+
+  """
+  Whether this venue has been approved by the WPN team.
+  """
+  isApproved: Boolean
+
+  """
+  The organization that this venue update is related to
+  """
+  organizationId: ID!
+}
+
+"""
+
+"""
+input CertifyRoundInput {
+  """
+  The round number.
+  """
+  number: Int!
+
+  """
+  A collection of the results of all of the matches in the round.
+  """
+  matchResults: [MatchResultInput!]!
+}
+
+"""
+The input type for role mutations that are global scoped
+"""
+input TwilioRoleInput {
+  """
+
+  """
+  personaId: ID!
+}
+
+"""
+
+"""
+enum CacheControlScope {
+  """
+
+  """
+  PUBLIC
+
+  """
+
+  """
+  PRIVATE
+}
+
+"""
+The `Upload` scalar type represents a file upload.
+"""
+scalar Upload
+
+"""
+A DeckConnection provides paginated result set of decks owned by current user.
+"""
+type DeckConnection {
+  """
+
+  """
+  deckPageInfo: DeckPageInfo!
+
+  """
+
+  """
+  node: Deck
+}

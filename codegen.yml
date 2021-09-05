@@ -1,0 +1,11 @@
+schema:
+  "https://api.tabletop.wizards.com/silverbeak-griffin-service/graphql":
+    headers:
+      Authorization: Bearer <<TOKEN>>
+generates:
+  ./src/eventlink.types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-apollo-client-helpers
+
