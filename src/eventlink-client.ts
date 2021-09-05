@@ -27,7 +27,13 @@ const EVENTLINK_GQL_URL_WSS = 'wss://api.tabletop.wizards.com/silverbeak-griffin
 export class EventlinkClient {
   public client: ApolloClient<NormalizedCacheObject>;
 
-  constructor(public wotcAuth: WotcAuth) {}
+  constructor(public wotcAuth?: WotcAuth) {}
+
+  public async login(email: string, password: string) {
+    this.wotcAuth = new WotcAuth();
+    await this.wotcAuth.login(email, password);
+    await this.init();
+  }
 
   public async init() {
     const authLink = setContext(async (_, { headers }) => {

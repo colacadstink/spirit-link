@@ -1,6 +1,6 @@
 {
   "name": "spirit-link",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "JS & TS helper library for EventLink",
   "scripts": {
     "build": "tsc",
@@ -20,7 +20,10 @@
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",
-    "dist/index.d.ts"
+    "dist/index.d.ts",
+    ".graphqlconfig",
+    "eventlink.gql",
+    "README.md"
   ],
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
