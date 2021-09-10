@@ -4,6 +4,7 @@
   "description": "JS & TS helper library for EventLink",
   "scripts": {
     "build": "tsc",
+    "buildWatch": "tsc --watch",
     "codegen": "npx graphql-codegen --config ./codegen.yml",
     "prepack": "npm run build"
   },

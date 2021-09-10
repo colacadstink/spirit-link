@@ -11,11 +11,11 @@ import {
   MutationSetRegisteredPlayerNameArgs,
   Query,
   QueryEventArgs,
-  QueryEventPageArgs,
-  Registration,
+  QueryEventPageArgs, QueryTimerArgs,
+  Registration, Round,
   SetRegisteredPlayerNameInput,
   Subscription,
-  SubscriptionPlayerRegisteredArgs
+  SubscriptionPlayerRegisteredArgs, SubscriptionRunningEventUpdatedArgs
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
 
@@ -23,6 +23,37 @@ const WebSocket = require('isomorphic-ws');
 
 const EVENTLINK_GQL_URL_HTTPS = 'https://api.tabletop.wizards.com/silverbeak-griffin-service/graphql';
 const EVENTLINK_GQL_URL_WSS = 'wss://api.tabletop.wizards.com/silverbeak-griffin-service/graphql';
+
+const GAME_STATE_CURRENT_ROUND = `
+currentRound {
+    id,
+    number,
+    isCertified,
+    isFinalRound,
+    isPlayoff,
+    pairingStrategy,
+    actualStartTime,
+    actualEndTime,
+    timerID,
+    matches {
+        id,
+        isBye,
+        teams {
+            id,
+            name,
+            players {
+                displayName,
+                firstName,
+                lastName
+            }
+        },
+        leftTeamWins,
+        rightTeamWins,
+        isLeftTeamDropped,
+        isRightTeamDropped,
+        tableNumber
+    }
+}`;
 
 export class EventlinkClient {
   public client: ApolloClient<NormalizedCacheObject>;
@@ -83,6 +114,7 @@ export class EventlinkClient {
     });
   }
 
+  //region Queries
   public getMe() {
     return this.client.query<Query>({
       query: gql`query MyInfo {
@@ -100,6 +132,53 @@ export class EventlinkClient {
           }
       }`
     }).then(result => result.data.me);
+  }
+
+  public getEventInfo(id: string) {
+    return this.client.query<Query, QueryEventArgs>({
+      query: gql`query PlayersInEvent($id: ID!) {
+          event(id: $id) {
+              id,
+              title,
+              description,
+              rulesEnforcementLevel,
+              pairingType,
+              entryFee {
+                  amount,
+                  currency
+              },
+              scheduledStartTime,
+              actualStartTime,
+              estimatedEndTime,
+              actualEndTime,
+              status,
+              capacity,
+              numberOfPlayers,
+              shortCode,
+              tags,
+              startingTableNumber,
+              hasTop8,
+              cardSet {
+                  id,
+                  name,
+                  releaseDate
+              },
+              eventFormat {
+                  blurb,
+                  color,
+                  id,
+                  includesDeckbuilding,
+                  includesDraft,
+                  name,
+                  requiresSetSelection
+              },
+              gameState {
+                  ${GAME_STATE_CURRENT_ROUND}
+              }
+          }
+      }`,
+      variables: { id }
+    }).then(result => result.data.event);
   }
 
   public getUpcomingEvents(organizationId: string) {
@@ -124,9 +203,6 @@ export class EventlinkClient {
     return this.client.query<Query, QueryEventArgs>({
       query: gql`query PlayersInEvent($id: ID!) {
           event(id: $id) {
-              id,
-              scheduledStartTime,
-              title,
               registeredPlayers {
                   emailAddress
                   firstName
@@ -138,6 +214,23 @@ export class EventlinkClient {
     }).then(result => result.data.event.registeredPlayers);
   }
 
+  public getTimerInfo(id: string) {
+    return this.client.query<Query, QueryTimerArgs>({
+      query: gql`query TimerInfo($id: ID!) {
+          timer(id: $id) {
+              id
+              state
+              durationMs
+              durationStartTime
+              serverTime
+          }
+      }`,
+      variables: { id }
+    }).then(result => result.data.timer);
+  }
+  //endregion
+
+  //region Mutations
   public registerPlayerByEmail(eventId: string, emailAddress: string) {
     return this.client.mutate<Mutation, MutationRegisterPlayerByEmailArgs>({
       mutation: gql`mutation RegisterPlayerByEmail($eventId: ID!, $emailAddress: String!) {
@@ -178,7 +271,9 @@ export class EventlinkClient {
       return result.data.setRegisteredPlayerName;
     });
   }
+  //endregion
 
+  //region Subscriptions
   public subscribeToPlayerRegistered(eventId: string) {
     const playerRegisteredSubject = new Subject<Registration>();
     const obs = this.client.subscribe<Subscription, SubscriptionPlayerRegisteredArgs>({
@@ -200,4 +295,23 @@ export class EventlinkClient {
     obs.map((result) => result.data.playerRegistered.addedPlayer).subscribe(playerRegisteredSubject);
     return playerRegisteredSubject.asObservable();
   }
+
+  public subscribeToCurrentRound(eventId: string) {
+    const currentRoundSubject = new Subject<Round>();
+    const obs = this.client.subscribe<Subscription, SubscriptionRunningEventUpdatedArgs>({
+      query: gql`subscription RunningEventUpdated($eventId: ID!) {
+          runningEventUpdated(eventId: $eventId) {
+              gameState {
+                  ${GAME_STATE_CURRENT_ROUND}
+              }
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    obs.map((result) => result.data.runningEventUpdated.gameState.currentRound).subscribe(currentRoundSubject);
+    return currentRoundSubject.asObservable();
+  }
+  //endregion
 }
