@@ -15,7 +15,7 @@ import {
   Registration, Round,
   SetRegisteredPlayerNameInput,
   Subscription,
-  SubscriptionPlayerRegisteredArgs, SubscriptionRunningEventUpdatedArgs
+  SubscriptionPlayerRegisteredArgs, SubscriptionRunningEventUpdatedArgs, SubscriptionTimerUpdatedArgs, Timer
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
 
@@ -182,8 +182,10 @@ export class EventlinkClient {
   }
 
   public getUpcomingEvents(organizationId: string) {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0);
     const filter: EventFilter = {
-      startDate: new Date().toISOString(),
+      startDate: startDate.toISOString(),
     };
     return this.client.query<Query, QueryEventPageArgs>({
       query: gql`query UpcomingEvents($organizationId: ID!, $filter: EventFilter) {
@@ -312,6 +314,26 @@ export class EventlinkClient {
     });
     obs.map((result) => result.data.runningEventUpdated.gameState.currentRound).subscribe(currentRoundSubject);
     return currentRoundSubject.asObservable();
+  }
+
+  public subscribeToTimer(id: string) {
+    const timerUpdatedSubject = new Subject<Timer>();
+    const obs = this.client.subscribe<Subscription, SubscriptionTimerUpdatedArgs>({
+      query: gql`subscription TimerUpdated($id: ID!) {
+          timerUpdated(id: $id) {
+            id,
+            serverTime,
+            state,
+            durationMs,
+            durationStartTime
+          }
+      }`,
+      variables: {
+        id
+      }
+    });
+    obs.map((result) => result.data.timerUpdated).subscribe(timerUpdatedSubject);
+    return timerUpdatedSubject.asObservable();
   }
   //endregion
 }
