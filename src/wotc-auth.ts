@@ -18,6 +18,9 @@ export class WotcAuth {
   private refreshToken: string | null = null;
   private expiresAt: number = -1;
 
+  private username = '';
+  private password = '';
+
   public get authToken() {
     if(!this.accessToken || this.expiresAt < Date.now()) {
       if(this.refreshToken) {
@@ -31,6 +34,8 @@ export class WotcAuth {
   }
 
   public login(username: string, password: string) {
+    this.username = username;
+    this.password = password;
     return WotcAuth.getWotcLogin(username, password).then((stepOneToken) => {
       this.refreshToken = stepOneToken.refresh_token;
       return WotcAuth.getEventLinkNonce(stepOneToken.access_token);
@@ -45,6 +50,7 @@ export class WotcAuth {
 
   private refresh() {
     return fetch('https://api.platform.wizards.com/auth/oauth/token', {
+      method: 'POST',
       headers: {
         Authorization: 'Basic TnpuU2h3S21MUE1FcllrZnV2eXluZkE5OnIyUmd4ODlhQ0ZUZmpiajdUVTU5c0w4cQ==',
         'Content-Type': 'application/json',
@@ -53,7 +59,10 @@ export class WotcAuth {
         "grant_type": "refresh_token",
         "refresh_token": this.refreshToken,
       })
-    }).then((resp) => resp.json()).then((stepOneToken: TokenResponse) => {
+    }).then((resp) => resp.json()).catch((err) => {
+      console.warn('Refresh error, getting new auth using username and password: ', err);
+      return WotcAuth.getWotcLogin(this.username, this.password);
+    }).then((stepOneToken: TokenResponse) => {
       this.refreshToken = stepOneToken.refresh_token;
       return WotcAuth.getEventLinkNonce(stepOneToken.access_token);
     }).then((stepTwoNonce) => {
