@@ -2,7 +2,7 @@ import {ApolloClient, createHttpLink, InMemoryCache, NormalizedCacheObject, spli
 import {setContext} from '@apollo/client/link/context';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import gql from 'graphql-tag';
-import {Subject} from 'rxjs';
+import {from, Observable} from 'rxjs';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
   EventFilter,
@@ -277,7 +277,6 @@ export class EventlinkClient {
 
   //region Subscriptions
   public subscribeToPlayerRegistered(eventId: string) {
-    const playerRegisteredSubject = new Subject<Registration>();
     const obs = this.client.subscribe<Subscription, SubscriptionPlayerRegisteredArgs>({
       query: gql`subscription PlayerRegistered($eventId: ID!) {
           playerRegistered(eventId: $eventId) {
@@ -294,12 +293,10 @@ export class EventlinkClient {
         eventId
       }
     });
-    obs.map((result) => result.data.playerRegistered.addedPlayer).subscribe(playerRegisteredSubject);
-    return playerRegisteredSubject.asObservable();
+    return from(obs.map((result) => result.data.playerRegistered.addedPlayer)) as Observable<Registration>;
   }
 
   public subscribeToCurrentRound(eventId: string) {
-    const currentRoundSubject = new Subject<Round>();
     const obs = this.client.subscribe<Subscription, SubscriptionRunningEventUpdatedArgs>({
       query: gql`subscription RunningEventUpdated($eventId: ID!) {
           runningEventUpdated(eventId: $eventId) {
@@ -312,12 +309,10 @@ export class EventlinkClient {
         eventId
       }
     });
-    obs.map((result) => result.data.runningEventUpdated.gameState.currentRound).subscribe(currentRoundSubject);
-    return currentRoundSubject.asObservable();
+    return from(obs.map((result) => result.data.runningEventUpdated.gameState.currentRound)) as Observable<Round>;
   }
 
   public subscribeToTimer(id: string) {
-    const timerUpdatedSubject = new Subject<Timer>();
     const obs = this.client.subscribe<Subscription, SubscriptionTimerUpdatedArgs>({
       query: gql`subscription TimerUpdated($id: ID!) {
           timerUpdated(id: $id) {
@@ -332,8 +327,7 @@ export class EventlinkClient {
         id
       }
     });
-    obs.map((result) => result.data.timerUpdated).subscribe(timerUpdatedSubject);
-    return timerUpdatedSubject.asObservable();
+    return from(obs.map((result) => result.data.timerUpdated)) as Observable<Timer>;
   }
   //endregion
 }
