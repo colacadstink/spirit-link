@@ -75,6 +75,7 @@ export class EventlinkClient {
   }
 
   public async init() {
+    await this.wotcAuth.authToken; // Don't set stuff up until this exists!
     const authLink = setContext(async (_, { headers }) => {
       const token = await this.wotcAuth.authToken;
       return {
