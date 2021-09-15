@@ -1,4 +1,11 @@
-import {ApolloClient, createHttpLink, InMemoryCache, NormalizedCacheObject, split} from '@apollo/client/core';
+import {
+  ApolloClient,
+  createHttpLink,
+  FetchPolicy,
+  InMemoryCache,
+  NormalizedCacheObject,
+  split
+} from '@apollo/client/core';
 import {setContext} from '@apollo/client/link/context';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import gql from 'graphql-tag';
@@ -119,8 +126,9 @@ export class EventlinkClient {
   }
 
   //region Queries
-  public getMe() {
+  public getMe(fetchPolicy: FetchPolicy = 'cache-first') {
     return this.client.query<Query>({
+      fetchPolicy,
       query: gql`query MyInfo {
           me {
               displayName
@@ -138,8 +146,9 @@ export class EventlinkClient {
     }).then(result => result.data.me);
   }
 
-  public getEventInfo(id: string) {
+  public getEventInfo(id: string, fetchPolicy: FetchPolicy = 'cache-first') {
     return this.client.query<Query, QueryEventArgs>({
+      fetchPolicy,
       query: gql`query PlayersInEvent($id: ID!) {
           event(id: $id) {
               id,
@@ -185,13 +194,14 @@ export class EventlinkClient {
     }).then(result => result.data.event);
   }
 
-  public getUpcomingEvents(organizationId: string) {
+  public getUpcomingEvents(organizationId: string, fetchPolicy: FetchPolicy = 'cache-first') {
     const startDate = new Date();
     startDate.setHours(0, 0, 0);
     const filter: EventFilter = {
       startDate: startDate.toISOString(),
     };
     return this.client.query<Query, QueryEventPageArgs>({
+      fetchPolicy,
       query: gql`query UpcomingEvents($organizationId: ID!, $filter: EventFilter) {
           eventPage(organizationId: $organizationId, filter: $filter) {
               events {
@@ -205,8 +215,9 @@ export class EventlinkClient {
     }).then(result => result.data.eventPage);
   }
 
-  public getPlayersInEvent(id: string) {
+  public getPlayersInEvent(id: string, fetchPolicy: FetchPolicy = 'cache-first') {
     return this.client.query<Query, QueryEventArgs>({
+      fetchPolicy,
       query: gql`query PlayersInEvent($id: ID!) {
           event(id: $id) {
               registeredPlayers {
@@ -220,8 +231,9 @@ export class EventlinkClient {
     }).then(result => result.data.event.registeredPlayers);
   }
 
-  public getTimerInfo(id: string) {
+  public getTimerInfo(id: string, fetchPolicy: FetchPolicy = 'cache-first') {
     return this.client.query<Query, QueryTimerArgs>({
+      fetchPolicy,
       query: gql`query TimerInfo($id: ID!) {
           timer(id: $id) {
               id
