@@ -69,7 +69,7 @@ export class WotcAuth {
       return WotcAuth.exchangeNonceForToken(stepTwoNonce);
     }).then((auth) => {
       this.accessToken = auth.access_token;
-      this.expiresAt = Date.now() + ((auth.expires_in - 10) * 1000);
+      this.expiresAt = Date.now() + ((auth.expires_in - 300) * 1000); // Have to take 5 minutes off because WebSocket only updates every 5 minutes // TODO is there a better way to do this proactively?
       return auth;
     });
   }

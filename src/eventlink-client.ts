@@ -18,6 +18,7 @@ import {
   SubscriptionPlayerRegisteredArgs, SubscriptionRunningEventUpdatedArgs, SubscriptionTimerUpdatedArgs, Timer
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
+import {catchError} from 'rxjs/operators';
 
 const WebSocket = require('isomorphic-ws');
 
@@ -93,6 +94,9 @@ export class EventlinkClient {
         };
       },
     }, WebSocket, 'graphql-ws');
+    subClient.onError((err) => {
+      console.error('SubscriptionClient error:', err);
+    })
     const wsLink = new WebSocketLink(subClient);
 
     const link = split(
@@ -276,6 +280,11 @@ export class EventlinkClient {
   //endregion
 
   //region Subscriptions
+  private subErrorHandler = <T>(err: any, orig: Observable<T>) => {
+    console.error('Subscription error: ', err);
+    return orig;
+  }
+
   public subscribeToPlayerRegistered(eventId: string) {
     const obs = this.client.subscribe<Subscription, SubscriptionPlayerRegisteredArgs>({
       query: gql`subscription PlayerRegistered($eventId: ID!) {
@@ -293,7 +302,8 @@ export class EventlinkClient {
         eventId
       }
     });
-    return from(obs.map((result) => result.data.playerRegistered.addedPlayer)) as Observable<Registration>;
+    return (from(obs.map((result) => result.data.playerRegistered.addedPlayer)) as Observable<Registration>)
+      .pipe(catchError(this.subErrorHandler));
   }
 
   public subscribeToCurrentRound(eventId: string) {
@@ -309,7 +319,8 @@ export class EventlinkClient {
         eventId
       }
     });
-    return from(obs.map((result) => result.data.runningEventUpdated.gameState.currentRound)) as Observable<Round>;
+    return (from(obs.map((result) => result.data.runningEventUpdated.gameState.currentRound)) as Observable<Round>)
+      .pipe(catchError(this.subErrorHandler));
   }
 
   public subscribeToTimer(id: string) {
@@ -327,7 +338,8 @@ export class EventlinkClient {
         id
       }
     });
-    return from(obs.map((result) => result.data.timerUpdated)) as Observable<Timer>;
+    return (from(obs.map((result) => result.data.timerUpdated)) as Observable<Timer>)
+      .pipe(catchError(this.subErrorHandler));
   }
   //endregion
 }
