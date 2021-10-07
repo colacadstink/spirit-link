@@ -12,7 +12,7 @@ import gql from 'graphql-tag';
 import {from, Observable} from 'rxjs';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
-  EventFilter,
+  EventFilter, EventStatus,
   Mutation,
   MutationRegisterPlayerByEmailArgs,
   MutationSetRegisteredPlayerNameArgs,
@@ -333,6 +333,21 @@ export class EventlinkClient {
       }
     });
     return (from(obs.map((result) => result.data.runningEventUpdated.gameState.currentRound)) as Observable<Round>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToRunningEventStatus(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionRunningEventUpdatedArgs>({
+      query: gql`subscription RunningEventUpdated($eventId: ID!) {
+          runningEventUpdated(eventId: $eventId) {
+              status
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.runningEventUpdated.status)) as Observable<EventStatus>)
       .pipe(catchError(this.subErrorHandler));
   }
 
