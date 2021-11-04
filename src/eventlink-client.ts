@@ -12,17 +12,29 @@ import gql from 'graphql-tag';
 import {from, Observable} from 'rxjs';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
-  EventFilter, EventStatus,
+  EventFilter,
+  EventStatus,
   Mutation,
   MutationRegisterPlayerByEmailArgs,
   MutationSetRegisteredPlayerNameArgs,
   Query,
   QueryEventArgs,
-  QueryEventPageArgs, QueryTimerArgs,
-  Registration, Round,
+  QueryEventPageArgs,
+  QueryTimerArgs,
+  Registration, RegistrationUpdatedPayload,
+  ReservationNotificationPayload,
+  Round,
   SetRegisteredPlayerNameInput,
   Subscription,
-  SubscriptionPlayerRegisteredArgs, SubscriptionRunningEventUpdatedArgs, SubscriptionTimerUpdatedArgs, Timer
+  SubscriptionEventReservationCancelledArgs,
+  SubscriptionEventReservedArgs,
+  SubscriptionGameResultReportedArgs,
+  SubscriptionPlayerRegisteredArgs, SubscriptionRegistrationUpdatedArgs,
+  SubscriptionRunningEventUpdatedArgs,
+  SubscriptionTeamDroppedArgs,
+  SubscriptionTimerUpdatedArgs,
+  Timer,
+  User
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
 import {catchError} from 'rxjs/operators';
@@ -186,13 +198,41 @@ export class EventlinkClient {
                   name,
                   requiresSetSelection
               },
+              registeredPlayers {
+                  firstName,
+                  lastName,
+                  id
+              },
+              interestedPlayers {
+                  firstName,
+                  lastName,
+                  id
+              },
               gameState {
-                  ${GAME_STATE_CURRENT_ROUND}
-              }
+                  ${GAME_STATE_CURRENT_ROUND},
+                  draftTimerID,
+                  constructDraftTimerID,
+                  top8DraftTimerID,
+              },
           }
       }`,
       variables: { id }
-    }).then(result => result.data.event);
+    }).then(result => result.data.event).then(_event =>  {
+      const event = {..._event};
+      if(event.gameState) {
+        event.gameState = {...event.gameState};
+      }
+      if(event.gameState?.constructDraftTimerID === 'null') {
+        event.gameState.constructDraftTimerID = null;
+      }
+      if(event.gameState?.draftTimerID === 'null') {
+        event.gameState.draftTimerID = null;
+      }
+      if(event.gameState?.top8DraftTimerID === 'null') {
+        event.gameState.top8DraftTimerID = null;
+      }
+      return event;
+    });
   }
 
   public getUpcomingEvents(organizationId: string, fetchPolicy: FetchPolicy = 'cache-first') {
@@ -304,7 +344,6 @@ export class EventlinkClient {
           playerRegistered(eventId: $eventId) {
               addedPlayer {
                   id,
-                  personaId,
                   emailAddress,
                   firstName,
                   lastName
@@ -316,6 +355,102 @@ export class EventlinkClient {
       }
     });
     return (from(obs.map((result) => result.data.playerRegistered.addedPlayer)) as Observable<Registration>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToTeamDropped(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionTeamDroppedArgs>({
+      query: gql`subscription TeamDropped($eventId: ID!) {
+          teamDropped(eventId: $eventId) {
+              droppedPlayer {
+                  firstName,
+                  lastName
+              }
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.teamDropped.droppedPlayer)) as Observable<User>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToEventReserved(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionEventReservedArgs>({
+      query: gql`subscription EventReserved($eventId: ID!) {
+          eventReserved(eventId: $eventId) {
+              firstName,
+              lastName,
+              reservationId
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.eventReserved)) as Observable<ReservationNotificationPayload>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToEventReservationCancelled(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionEventReservationCancelledArgs>({
+      query: gql`subscription EventReservationCancelled($eventId: ID!) {
+          eventReservationCancelled(eventId: $eventId) {
+              firstName,
+              lastName,
+              reservationId
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.eventReservationCancelled)) as Observable<ReservationNotificationPayload>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToGameResultReported(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionGameResultReportedArgs>({
+      query: gql`subscription GameResultReported($eventId: ID!) {
+          gameResultReported(eventId: $eventId) {
+              eventId,
+              eventCreator {
+                  firstName,
+                  lastName,
+                  displayName,
+                  personaId
+              },
+              sender {
+                  firstName,
+                  lastName,
+                  displayName,
+                  personaId
+              }
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.gameResultReported.eventId)) as Observable<string>)
+      .pipe(catchError(this.subErrorHandler));
+  }
+
+  public subscribeToRegistrationUpdated(eventId: string) {
+    const obs = this.client.subscribe<Subscription, SubscriptionRegistrationUpdatedArgs>({
+      query: gql`subscription RegistrationUpdated($eventId: ID!) {
+          registrationUpdated(eventId: $eventId) {
+              firstName,
+              lastName,
+              registrationId
+          }
+      }`,
+      variables: {
+        eventId
+      }
+    });
+    return (from(obs.map((result) => result.data.registrationUpdated)) as Observable<RegistrationUpdatedPayload>)
       .pipe(catchError(this.subErrorHandler));
   }
 
