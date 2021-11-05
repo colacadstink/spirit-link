@@ -344,6 +344,7 @@ export class EventlinkClient {
           playerRegistered(eventId: $eventId) {
               addedPlayer {
                   id,
+                  personaId,
                   emailAddress,
                   firstName,
                   lastName
