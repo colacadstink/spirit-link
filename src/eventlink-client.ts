@@ -78,7 +78,11 @@ currentRound {
 export class EventlinkClient {
   public client: ApolloClient<NormalizedCacheObject>;
 
-  constructor(public wotcAuth?: WotcAuth) {}
+  constructor(public wotcAuth?: WotcAuth) {
+    if(Symbol) {
+      Symbol.observable = Symbol.for('observable'); // I'm not sure why this isn't being created right but it's not and it's causing issues
+    }
+  }
 
   public async login(email: string, password: string) {
     this.wotcAuth = new WotcAuth();
