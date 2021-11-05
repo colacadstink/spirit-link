@@ -80,7 +80,8 @@ export class EventlinkClient {
 
   constructor(public wotcAuth?: WotcAuth) {
     if(Symbol) {
-      Symbol.observable = Symbol.for('observable'); // I'm not sure why this isn't being created right but it's not and it's causing issues
+      // I'm not sure why this isn't being created right but it's not and it's causing issues
+      (Symbol as any).observable = Symbol.for('observable');
     }
   }
 
