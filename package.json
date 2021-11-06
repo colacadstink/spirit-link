@@ -1,6 +1,6 @@
 {
   "name": "spirit-link",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "JS & TS helper library for EventLink",
   "scripts": {
     "build": "tsc",

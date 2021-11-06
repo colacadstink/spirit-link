@@ -218,6 +218,22 @@ export class EventlinkClient {
                   draftTimerID,
                   constructDraftTimerID,
                   top8DraftTimerID,
+                  standings {
+                      team {
+                          name,
+                          players {
+                              firstName,
+                              lastName
+                          }
+                      }
+                      wins,
+                      losses,
+                      draws,
+                      matchPoints,
+                      opponentMatchWinPercent,
+                      gameWinPercent,
+                      opponentGameWinPercent
+                  }
               },
           }
       }`,
