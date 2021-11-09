@@ -1,3 +1,5 @@
+import 'symbol-observable'; // This needs to be before we import any RxJS stuff.
+
 import {
   ApolloClient,
   createHttpLink,
@@ -37,7 +39,6 @@ import {
   User
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
-import 'symbol-observable';
 import {catchError} from 'rxjs/operators';
 
 const WebSocket = require('isomorphic-ws');
