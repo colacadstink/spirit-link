@@ -37,6 +37,7 @@ import {
   User
 } from './eventlink.types';
 import {WotcAuth} from './wotc-auth';
+import 'symbol-observable';
 import {catchError} from 'rxjs/operators';
 
 const WebSocket = require('isomorphic-ws');
@@ -78,12 +79,7 @@ currentRound {
 export class EventlinkClient {
   public client: ApolloClient<NormalizedCacheObject>;
 
-  constructor(public wotcAuth?: WotcAuth) {
-    if(Symbol) {
-      // I'm not sure why this isn't being created right but it's not and it's causing issues
-      (Symbol as any).observable = Symbol.for('observable');
-    }
-  }
+  constructor(public wotcAuth?: WotcAuth) {}
 
   public async login(email: string, password: string) {
     this.wotcAuth = new WotcAuth();
