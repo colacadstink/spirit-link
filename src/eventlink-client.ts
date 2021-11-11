@@ -230,6 +230,14 @@ export class EventlinkClient {
                       opponentMatchWinPercent,
                       gameWinPercent,
                       opponentGameWinPercent
+                  },
+                  pods {
+                      number,
+                      seats {
+                          firstName,
+                          lastName,
+                          personaId
+                      }
                   }
               },
           }
