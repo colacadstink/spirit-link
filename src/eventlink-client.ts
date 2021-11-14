@@ -237,7 +237,6 @@ export class EventlinkClient {
                           firstName,
                           lastName,
                           personaId,
-                          team,
                       }
                   },
                   constructedSeats {
