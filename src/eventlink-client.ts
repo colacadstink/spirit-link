@@ -220,7 +220,7 @@ export class EventlinkClient {
                           name,
                           players {
                               firstName,
-                              lastName
+                              lastName,
                           }
                       }
                       wins,
@@ -236,8 +236,16 @@ export class EventlinkClient {
                       seats {
                           firstName,
                           lastName,
-                          personaId
+                          personaId,
+                          team,
                       }
+                  },
+                  constructedSeats {
+                      number,
+                      firstName,
+                      lastName,
+                      personaId,
+                      team,
                   }
               },
           }
