@@ -244,8 +244,7 @@ export class EventlinkClient {
                       number,
                       firstName,
                       lastName,
-                      personaId,
-                      team,
+                      personaId
                   }
               },
           }
