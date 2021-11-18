@@ -11,7 +11,7 @@ import {
 import {setContext} from '@apollo/client/link/context';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import gql from 'graphql-tag';
-import {from, Observable} from 'rxjs';
+import {from, Observable, throwError} from 'rxjs';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
   EventFilter,
@@ -365,9 +365,9 @@ export class EventlinkClient {
   //endregion
 
   //region Subscriptions
-  private subErrorHandler = <T>(err: any, orig: Observable<T>) => {
+  private subErrorHandler = <T>(err: any) => {
     console.error('Subscription error: ', err);
-    return orig;
+    return throwError(err);
   }
 
   public subscribeToPlayerRegistered(eventId: string) {
