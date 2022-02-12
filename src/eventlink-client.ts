@@ -16,7 +16,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
   EventFilter,
   EventStatus,
-  Mutation, MutationCreateTeamArgs,
+  Mutation, MutationCreateTeamArgs, MutationRegisterGuestPlayerArgs,
   MutationRegisterPlayerByEmailArgs,
   MutationSetRegisteredPlayerNameArgs,
   Query,
@@ -76,6 +76,16 @@ currentRound {
         tableNumber
     }
 }`;
+
+export type RegResult = {
+  success: false,
+  players: null,
+  err: any
+} | {
+  success: true,
+  players: Registration[],
+  err?: undefined
+}
 
 export class EventlinkClient {
   public client: ApolloClient<NormalizedCacheObject>;
@@ -322,7 +332,7 @@ export class EventlinkClient {
   //endregion
 
   //region Mutations
-  public registerPlayerByEmail(eventId: string, emailAddress: string) {
+  public registerPlayerByEmail(eventId: string, emailAddress: string): Promise<RegResult> {
     return this.client.mutate<Mutation, MutationRegisterPlayerByEmailArgs>({
       mutation: gql`mutation RegisterPlayerByEmail($eventId: ID!, $emailAddress: String!) {
           registerPlayerByEmail(eventId: $eventId, emailAddress: $emailAddress) {
@@ -336,6 +346,35 @@ export class EventlinkClient {
           }
       }`,
       variables: { eventId, emailAddress }
+    }).then((result) => {
+      const players = result.data.registerPlayerByEmail.registeredPlayers;
+      return {
+        success: true,
+        players
+      } as RegResult;
+    }, (err) => {
+      return {
+        success: false,
+        players: null as Registration[],
+        err: err
+      } as RegResult;
+    });
+  }
+
+  public registerGuestPlayer(eventId: string, firstName: string, lastName: string) {
+    return this.client.mutate<Mutation, MutationRegisterGuestPlayerArgs>({
+      mutation: gql`mutation RegisterPlayerByEmail($eventId: ID!, $firstName: String!, $lastName: String!) {
+          registerGuestPlayer(eventId: $eventId, firstName: $firstName, lastName: $lastName) {
+              registeredPlayers {
+                  personaId
+                  id
+                  firstName
+                  lastName
+                  emailAddress
+              }
+          }
+      }`,
+      variables: { eventId, firstName, lastName }
     }).then((result) => {
       const players = result.data.registerPlayerByEmail.registeredPlayers;
       return {
