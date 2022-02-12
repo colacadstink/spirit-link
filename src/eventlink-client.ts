@@ -16,7 +16,7 @@ import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {
   EventFilter,
   EventStatus,
-  Mutation,
+  Mutation, MutationCreateTeamArgs,
   MutationRegisterPlayerByEmailArgs,
   MutationSetRegisteredPlayerNameArgs,
   Query,
@@ -34,7 +34,7 @@ import {
   SubscriptionPlayerRegisteredArgs, SubscriptionRegistrationUpdatedArgs,
   SubscriptionRunningEventUpdatedArgs,
   SubscriptionTeamDroppedArgs,
-  SubscriptionTimerUpdatedArgs,
+  SubscriptionTimerUpdatedArgs, TeamPlayerInput,
   Timer,
   User
 } from './eventlink.types';
@@ -327,9 +327,11 @@ export class EventlinkClient {
       mutation: gql`mutation RegisterPlayerByEmail($eventId: ID!, $emailAddress: String!) {
           registerPlayerByEmail(eventId: $eventId, emailAddress: $emailAddress) {
               registeredPlayers {
+                  personaId
                   id
                   firstName
                   lastName
+                  emailAddress
               }
           }
       }`,
@@ -360,6 +362,26 @@ export class EventlinkClient {
       variables: { input }
     }).then((result) => {
       return result.data.setRegisteredPlayerName;
+    });
+  }
+
+  public createTeam(eventId: string, personaIds: string[]) {
+    const players = personaIds.map((personaId) => {
+      return {
+        personaId
+      } as TeamPlayerInput;
+    })
+    return this.client.mutate<Mutation, MutationCreateTeamArgs>({
+      mutation: gql`mutation CreateTeam($eventId: ID!, $players: [TeamPlayerInput]) {
+          createTeam(eventId: $eventId, players: $players) {
+              id,
+              teamCode,
+              isRegistered
+          }
+      }`,
+      variables: { eventId, players }
+    }).then((result) => {
+      return result.data.createTeam;
     });
   }
   //endregion

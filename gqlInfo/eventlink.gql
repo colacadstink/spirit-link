@@ -22,6 +22,11 @@ type Query {
   admins: [User!]!
 
   """
+  Get active events of current user.
+  """
+  myActiveEvents: [Event!]!
+
+  """
   Get an event by ID.
   """
   event(id: ID!): Event
@@ -140,6 +145,16 @@ type Query {
   query to fetch a random MagicCard.
   """
   randomCard: MagicCard
+
+  """
+  query to fetch all MagicCard setNames in English.
+  """
+  magicCardSets: [magicCardSets]
+
+  """
+  query to fetch all MagicCard subTypes in English.
+  """
+  magicCardOracleSubTypes: magicCardOracleSubType
 
   """
   Query to fetch decks by id.
@@ -357,17 +372,17 @@ type OrganizationGroup {
 """
 type EventTemplate {
   """
-
+  The unique id of this template
   """
   id: ID!
 
   """
-
+  The name given to this template
   """
   name: String!
 
   """
-
+  When this template was first published in Contentful
   """
   firstPublishedAt: DateTime!
 
@@ -422,9 +437,19 @@ type EventTemplate {
   fieldRules: [FieldRuleOption!]!
 
   """
-
+  The tags for this template that will be applied to the event this event template is on
   """
   tags: Tags!
+
+  """
+  The type of template this is. Used currently to distinguish between regular templates and prerelease templates.
+  """
+  templateType: String
+
+  """
+  The type of prerelease template. Only used if templateType is a prerelease. This is used to distinguish betwen 'At Home', 'In Store', and 'Webcam' prereleases.
+  """
+  prereleaseType: String
 }
 
 """
@@ -718,12 +743,12 @@ type Event {
   """
   The latitude of the event's location.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the event's location.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The street address of the event's location. Does not include HTML; uses line breaks for
@@ -768,14 +793,14 @@ type Event {
   isOnline: Boolean
 
   """
-  The official event template id that this event is currently using
-  """
-  eventTemplate: EventTemplate
-
-  """
   The persona id of the user that created this event.
   """
   createdBy: ID
+
+  """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int!
 
   """
   If an event was created as part of a group this will have a value. Otherwise it will be null.
@@ -791,6 +816,11 @@ type Event {
   The format of the event.
   """
   eventFormat: EventFormat
+
+  """
+  The official event template id that this event is currently using
+  """
+  eventTemplate: EventTemplate
 
   """
   The incidents that have been reported during this event.
@@ -820,6 +850,11 @@ type Event {
   Event-Res calls this "registrations."
   """
   registeredPlayers: [Registration!]
+
+  """
+  Get all the current teams for an event
+  """
+  teams: [TeamPayload!]!
 }
 
 """
@@ -829,19 +864,9 @@ The description of each enum value gives you the i18n key of the format name.
 """
 enum EventFormatEnum {
   """
-  format__wotc-draft
-  """
-  WOTC_DRAFT
-
-  """
   format__booster-draft
   """
   BOOSTER_DRAFT
-
-  """
-  format__sealed-deck
-  """
-  SEALED_DECK
 
   """
   format__brawl
@@ -849,14 +874,24 @@ enum EventFormatEnum {
   BRAWL
 
   """
-  format__pauper
+  format__commander
   """
-  PAUPER
+  COMMANDER
 
   """
-  format__vintage
+  format__wotc-draft
   """
-  VINTAGE
+  WOTC_DRAFT
+
+  """
+  format__four-pack-sealed
+  """
+  FOUR_PACK_SEALED
+
+  """
+  format__historic
+  """
+  HISTORIC
 
   """
   format__legacy
@@ -869,9 +904,14 @@ enum EventFormatEnum {
   MODERN
 
   """
-  format__standard
+  format__other
   """
-  STANDARD
+  OTHER
+
+  """
+  format__pauper
+  """
+  PAUPER
 
   """
   format__pioneer
@@ -879,14 +919,19 @@ enum EventFormatEnum {
   PIONEER
 
   """
-  format__commander2
+  format__sealed-deck
   """
-  COMMANDER2
+  SEALED_DECK
 
   """
-  format__other
+  format__standard
   """
-  OTHER
+  STANDARD
+
+  """
+  format__vintage
+  """
+  VINTAGE
 }
 
 """
@@ -1519,6 +1564,11 @@ type GameState {
   GUID or UUID of that represents Timer ID of Timer GraphQL for Top8 Drafting
   """
   top8DraftTimerID: ID
+
+  """
+  The number of games until a win.
+  """
+  gamesToWin: Int
 }
 
 """
@@ -1616,6 +1666,46 @@ type TeamResult {
   holds game-level draws
   """
   draws: Int!
+
+  """
+  Is this result currently a playoff result
+  """
+  isPlayoffResult: Boolean
+
+  """
+  The Persona id of the submitter for this result
+  """
+  submitter: ID!
+
+  """
+  Is this a final result
+  """
+  isFinal: Boolean
+
+  """
+  Is the submitter a TO
+  """
+  isTO: Boolean
+
+  """
+  Is this result a bye
+  """
+  isBye: Boolean
+
+  """
+  The current results wins
+  """
+  wins: Int
+
+  """
+  The current results losses
+  """
+  losses: Int
+
+  """
+  The id for which team this result applies to
+  """
+  teamId: ID!
 }
 
 """
@@ -1852,6 +1942,51 @@ enum PodPairingType {
 }
 
 """
+
+"""
+type TeamPayload {
+  """
+  The ID of the team.
+  """
+  id: ID!
+
+  """
+  The ID of the event.
+  """
+  eventId: ID!
+
+  """
+  The sort code to identify the team for joining
+  """
+  teamCode: String!
+
+  """
+  Determines if team is joinable
+  """
+  isLocked: Boolean
+
+  """
+  Determines if team is registered.
+  """
+  isRegistered: Boolean
+
+  """
+  List of players in team reserved for the event.
+  """
+  reservations: [Registration!]
+
+  """
+  List of players in team registered for the event.
+  """
+  registrations: [Registration!]
+
+  """
+  The table number that this team is currently set to. Will not always contain a value
+  """
+  tableNumber: Int
+}
+
+"""
 A type for specifying search criteria for events.
 """
 input EventFilter {
@@ -2047,12 +2182,12 @@ type RecurrenceEvent {
   """
   The latitude of the event's location.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the event's location.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The street address of the event's location. Does not include HTML; uses line breaks for
@@ -2130,6 +2265,11 @@ type RecurrenceEvent {
   Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
   """
   isDotWBound: Boolean
+
+  """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int
 }
 
 """
@@ -2689,6 +2829,11 @@ type MagicCard {
   faces: [MagicCardFace!]
 
   """
+  Related parts for MagicCards such as faces and tokens
+  """
+  cardRelations: [magicCardRelation]
+
+  """
   Whether this card has more than one face. This is true for double-sided cards
   """
   isMultiFace: Boolean
@@ -2764,6 +2909,11 @@ type MagicCard {
   A list of the types that the card bears
   """
   types: [String]
+
+  """
+  A specific printing of a card returned if setAbbreviation and language filters are passed in
+  """
+  printing: MagicCardPrinting
 }
 
 """
@@ -2855,6 +3005,21 @@ type MagicCardFace {
 The string representation of a Magic card mana cost
 """
 scalar MagicManaCost
+
+"""
+Related parts for MagicCards such as faces and tokens
+"""
+type magicCardRelation {
+  """
+  The role of the additional part
+  """
+  role: String!
+
+  """
+  The related MagicCard
+  """
+  card: MagicCardFace
+}
 
 """
 An object that tracks a particular card's legal status in a particular format
@@ -3008,7 +3173,7 @@ type MagicCardPrinting {
   """
   An array of objects listing whether the card is banned, restricted, suspended, or legal in each MagicFormat
   """
-  legalities: [MagicCardLegality!]
+  legalities: [MagicCardLegality]
 
   """
   Watermarks on a card printing
@@ -3225,6 +3390,31 @@ type MagicCardPrintingSearchResult implements SearchResult {
 }
 
 """
+All set information of MagicCards
+"""
+type magicCardSets {
+  """
+  The name of the set
+  """
+  name: String!
+
+  """
+  The abbreviation of the set name
+  """
+  abbreviation: String
+}
+
+"""
+All oracle subTypes of MagicCards
+"""
+type magicCardOracleSubType {
+  """
+  A card is the color or colors of the mana symbols in its mana cost, regardless of the color of its frame
+  """
+  subTypes: [String]
+}
+
+"""
 A deck is a collection of Magic cards, divided into the main deck and sideboard.
 """
 type Deck {
@@ -3362,6 +3552,11 @@ type OwnedDeckConnection {
 
 type Mutation {
   """
+  Drop yourself as aplayer from the match / event
+  """
+  dropSelf(eventId: ID!): GameState
+
+  """
   Create a new event.
   """
   createEvent(input: CreateEventInput!): Event
@@ -3400,6 +3595,11 @@ type Mutation {
   Creates a new incident with associated infraction and penalty for an event.
   """
   createIncident(input: CreateIncidentInput!): Incident
+
+  """
+  Creates new incidents for a team of players.
+  """
+  createTeamIncident(input: CreateTeamIncidentInput!): [Incident!]!
 
   """
   Updates an existing incident.
@@ -3493,6 +3693,13 @@ type Mutation {
   should only be used before the round result is certified.
   """
   undropTeam(eventId: ID!, teamId: ID!): GameState
+
+  """
+  Drop multiple team from the current round. The team will not be paired in the next round, and
+  any unplayed games will be credited to their opponent (assuming the opponent has not also
+  dropped).
+  """
+  dropTeams(eventId: ID!, teamIds: [ID!]!): GameState
 
   """
   Certify the results of a round. This mutation asks you to send all of the match results for
@@ -3607,6 +3814,70 @@ type Mutation {
   ): RegistrationPayload
 
   """
+  DEPRECATED. Use the query on the Event type for 'teams' instead.
+  Get all teams for an event
+  """
+  getTeams(eventId: ID!): [TeamPayload!]!
+
+  """
+  Create new team for event
+  """
+  createTeam(eventId: ID!, players: [TeamPlayerInput]): TeamPayload!
+
+  """
+  Deletes team from event
+  """
+  deleteTeam(eventId: ID!, teamCode: String!): String
+
+  """
+  Gets specific team from event by the team code.
+  """
+  getTeamByCode(eventId: ID!, teamCode: String!): TeamPayload!
+
+  """
+  Joins player to given team
+  """
+  addTeamMember(
+    eventId: ID!
+    teamCode: String!
+    teamPlayer: TeamPlayerInput!
+  ): TeamPayload!
+
+  """
+  Removes player from team
+  """
+  removeTeamMember(
+    eventId: ID!
+    teamCode: String!
+    teamPlayer: TeamPlayerInput!
+  ): TeamPayload!
+
+  """
+  Locks team and keeps new players from joining
+  """
+  lockTeam(eventId: ID!, teamCode: String!): TeamPayload!
+
+  """
+  Unlocks a locked team
+  """
+  unlockTeam(eventId: ID!, teamCode: String!): TeamPayload!
+
+  """
+  Registers all members of a team
+  """
+  registerTeam(eventId: ID!, teamCode: String!): TeamPayload!
+
+  """
+  Unregisters all members of a team
+  """
+  deregisterTeam(eventId: ID!, teamCode: String!): TeamPayload!
+
+  """
+  Sets table number for a team
+  """
+  assignTableTeam(eventId: ID!, teamCode: String!, table: Int!): TeamPayload!
+
+  """
   Mark the Terms & Conditions as being accepted by an organization
   """
   acceptTermsAndConditions(input: AcceptTermsAndConditionsInput!): Organization
@@ -3675,6 +3946,16 @@ type Mutation {
   Revoke Twilio  admin-level rights from a user.
   """
   revokeTwilioAdmin(id: ID!): String!
+
+  """
+  Create a new Private Event
+  """
+  createPrivateEvent(input: CreatePrivateEventInput!): PrivateEvent
+
+  """
+  Reserve a spot for an Event
+  """
+  joinEvent(id: ID!): String!
 
   """
   creates a timer
@@ -3828,6 +4109,11 @@ input CreateEventInput {
   isAdHoc: Boolean
 
   """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int
+
+  """
   Whether this event is marked as an event that was run online.
   """
   isOnline: Boolean
@@ -3917,13 +4203,13 @@ input UpdateEventInput {
   The latitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The street address of the event's location. This should be sourced from either the
@@ -3972,6 +4258,11 @@ input UpdateEventInput {
   The official event template id that this event is currently using
   """
   eventTemplateId: ID
+
+  """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int
 }
 
 """
@@ -4063,13 +4354,13 @@ input CreateRecurringEventInput {
   The latitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The street address of the event's location. This should be sourced from either the
@@ -4138,6 +4429,11 @@ input CreateRecurringEventInput {
   Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
   """
   isDotWBound: Boolean
+
+  """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int
 }
 
 """
@@ -4264,13 +4560,13 @@ input UpdateRecurringEventInput {
   The latitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the event's location. This should be sourced from either the
   venue, if present, or the organization. Required.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The street address of the event's location. This should be sourced from either the
@@ -4339,6 +4635,11 @@ input UpdateRecurringEventInput {
   Is the recurrence Day of the Week bound, used only for creating recurring events when the frequency is MONTHLY
   """
   isDotWBound: Boolean
+
+  """
+  The number of players per team in the event.
+  """
+  requiredTeamSize: Int
 }
 
 """
@@ -4374,6 +4675,71 @@ input CreateIncidentInput {
   The persona ID of the offender.
   """
   offenderId: ID!
+
+  """
+  The persona ID of the reporter.
+  """
+  reporterId: ID!
+
+  """
+  The ID of the infraction that occurred.
+  """
+  infractionId: ID!
+
+  """
+  The name of the infraction that was assessed.
+  """
+  infractionName: String!
+
+  """
+  The name of the infraction category that was assessed.
+  """
+  infractionCategoryName: String!
+
+  """
+  The ID of the infraction category that occurred.
+  """
+  infractionCategoryId: ID!
+
+  """
+  The ID of the penalty that was assessed.
+  """
+  penaltyId: ID!
+
+  """
+  The name of the penalty that was assessed.
+  """
+  penaltyName: String!
+
+  """
+  The round number during which the incident occurred.
+  """
+  roundNumber: Int!
+
+  """
+  The reporter's comments about this incident.
+  """
+  comment: String
+
+  """
+  The time at which the incident was reported.
+  """
+  reportedAt: DateTime!
+}
+
+"""
+
+"""
+input CreateTeamIncidentInput {
+  """
+  The ID of the event during which the incident occurred.
+  """
+  eventId: ID!
+
+  """
+  The persona ID of the offender.
+  """
+  offenderIds: [ID!]!
 
   """
   The persona ID of the reporter.
@@ -4769,6 +5135,31 @@ input ClearPreferredTableNumberInput {
 """
 
 """
+input TeamPlayerInput {
+  """
+  The ID of the registration.
+  """
+  registrationId: ID
+
+  """
+  The ID of the reservation.
+  """
+  reservationId: ID
+
+  """
+  The persona ID of the new player.
+  """
+  personaId: String!
+
+  """
+  The email for the player.
+  """
+  email: String
+}
+
+"""
+
+"""
 input AcceptTermsAndConditionsInput {
   """
   The ID of the organization doing the accepting
@@ -4938,12 +5329,12 @@ input ApproveVenueInput {
   """
   The latitude of the venue's physical location. Required.
   """
-  latitude: Float!
+  latitude: Float
 
   """
   The longitude of the venue's physical location. Required.
   """
-  longitude: Float!
+  longitude: Float
 
   """
   The physical address of the venue. Required.
@@ -5014,11 +5405,6 @@ input sendSMSInput {
 
   """
   mobileNumbers: [MobileNumberInput]!
-
-  """
-
-  """
-  message: String!
 }
 
 """
@@ -5028,7 +5414,17 @@ input MobileNumberInput {
   """
 
   """
+  code: String!
+
+  """
+
+  """
   mobileNumber: String!
+
+  """
+
+  """
+  message: String!
 }
 
 """
@@ -5079,6 +5475,81 @@ input broadcastSMSInput {
 
   """
   broadcastMessage: String!
+}
+
+"""
+The input type to be used when creating a Private event.
+"""
+input CreatePrivateEventInput {
+  """
+  The title of the event. Required.
+  """
+  title: String!
+
+  """
+  A description of the event. Should not contain HTML. Optional
+  """
+  description: String
+
+  """
+  The ID of the EventFormat for the event. Required.
+  """
+  eventFormat: EventFormatEnum!
+
+  """
+  The pairing method for the event. Required.
+  """
+  pairingType: PairingType!
+
+  """
+  The number of games until a win. Required
+  """
+  gamesToWin: Int!
+
+  """
+  The Date & time that the event is scheduled to start, in ISO format. Optional
+  """
+  scheduledStartDateTime: String
+}
+
+"""
+An Private Event is an Play used by companion app users. It is not associated with any organization
+"""
+type PrivateEvent {
+  """
+  EventID
+  """
+  id: ID!
+
+  """
+  Name of an event
+  """
+  title: String
+
+  """
+  A short summery of an event
+  """
+  description: String
+
+  """
+  A Code to join the event.
+  """
+  shortCode: String!
+
+  """
+  The format of the event. Required
+  """
+  format: EventFormatEnum!
+
+  """
+  The pairing method for the event. Required
+  """
+  pairingType: PairingType!
+
+  """
+  The number of games until a win. Required
+  """
+  gamesToWin: Int!
 }
 
 """
@@ -5271,6 +5742,21 @@ type Subscription {
 
   """
   eventReservationCancelled(eventId: ID!): ReservationNotificationPayload!
+
+  """
+
+  """
+  teamCreated(eventId: ID!): TeamPayload!
+
+  """
+
+  """
+  teamUpdated(eventId: ID!): TeamPayload!
+
+  """
+
+  """
+  teamDeleted(eventId: ID!): TeamPayload!
 
   """
   A user has been given a new role (scorekeeper, store owner, or store admin)
