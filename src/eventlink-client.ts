@@ -46,8 +46,7 @@ const WebSocket = require('isomorphic-ws');
 const EVENTLINK_GQL_URL_HTTPS = 'https://api.tabletop.wizards.com/silverbeak-griffin-service/graphql';
 const EVENTLINK_GQL_URL_WSS = 'wss://api.tabletop.wizards.com/silverbeak-griffin-service/graphql';
 
-const GAME_STATE_CURRENT_ROUND = `
-currentRound {
+const ROUND_FIELDS = `{
     id,
     number,
     isCertified,
@@ -76,6 +75,11 @@ currentRound {
         tableNumber
     }
 }`;
+
+const GAME_STATE_CURRENT_ROUND = `
+currentRound ${ROUND_FIELDS}`;
+const GAME_STATE_ROUNDS = `
+rounds ${ROUND_FIELDS}`;
 
 export type RegResult = {
   success: false,
@@ -171,7 +175,7 @@ export class EventlinkClient {
     }).then(result => result.data.me);
   }
 
-  public getEventInfo(id: string, fetchPolicy: FetchPolicy = 'cache-first') {
+  public getEventInfo(id: string, fetchPolicy: FetchPolicy = 'cache-first', includeAllRounds = false) {
     return this.client.query<Query, QueryEventArgs>({
       fetchPolicy,
       query: gql`query PlayersInEvent($id: ID!) {
@@ -222,6 +226,7 @@ export class EventlinkClient {
               },
               gameState {
                   ${GAME_STATE_CURRENT_ROUND},
+                  ${includeAllRounds ? GAME_STATE_ROUNDS : ''}
                   draftTimerID,
                   constructDraftTimerID,
                   top8DraftTimerID,
