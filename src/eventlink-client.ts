@@ -381,7 +381,7 @@ export class EventlinkClient {
       }`,
       variables: { eventId, firstName, lastName }
     }).then((result) => {
-      const players = result.data.registerPlayerByEmail.registeredPlayers;
+      const players = result.data.registerGuestPlayer.registeredPlayers;
       return {
         success: true,
         players
