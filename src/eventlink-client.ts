@@ -303,6 +303,22 @@ export class EventlinkClient {
     }).then(result => result.data.eventPage);
   }
 
+  public getEvents(organizationId: string, filter: EventFilter, fetchPolicy: FetchPolicy = 'cache-first') {
+    return this.client.query<Query, QueryEventPageArgs>({
+      fetchPolicy,
+      query: gql`query UpcomingEvents($organizationId: ID!, $filter: EventFilter) {
+          eventPage(organizationId: $organizationId, filter: $filter) {
+              events {
+                  id,
+                  scheduledStartTime,
+                  title
+              }
+          }
+      }`,
+      variables: { filter, organizationId }
+    }).then(result => result.data.eventPage);
+  }
+
   public getPlayersInEvent(id: string, fetchPolicy: FetchPolicy = 'cache-first') {
     return this.client.query<Query, QueryEventArgs>({
       fetchPolicy,
